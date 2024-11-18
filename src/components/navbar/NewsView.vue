@@ -35,7 +35,7 @@ export default {
         },
         {
           title:
-            '"한 달 뒤면 ���울까지 20분" 환호 직주인들 신난 동네 [집코노미-접접쪽쪽]',
+            '"한 달 뒤면 울까지 20분" 환호 직주인들 신난 동네 [집코노미-접접쪽쪽]',
           source: "한국경제",
           time: "5시간 전",
         },
@@ -71,14 +71,15 @@ export default {
 .news-header {
   position: sticky;
   top: 0;
-  background: linear-gradient(to right, #1e40af, #1e3a8a);
+  background: #0a362f;
   color: white;
   padding: 15px;
   height: 56px;
   display: flex;
   align-items: center;
   z-index: 1001;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .header-content {
@@ -91,12 +92,19 @@ export default {
   font-size: 20px;
   cursor: pointer;
   padding: 8px;
+  color: rgba(255, 255, 255, 0.9);
+  transition: color 0.2s ease;
+}
+
+.back-icon:hover {
+  color: white;
 }
 
 .header-title {
   font-size: 16px;
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.95);
 }
 
 .news-content {
