@@ -9,12 +9,12 @@
     <div class="news-content">
       <div class="news-list">
         <div v-for="(news, index) in newsList" :key="index" class="news-item">
-          <div class="news-title">{{ news.title }}</div>
+          <a :href="news.link" target="_blank" class="news-title">{{ news.title }}</a>
+          <div class="news-description">{{ news.description }}</div>
           <div class="news-info">
             <span class="news-source">{{ news.source }}</span>
             <span class="news-time">{{ news.time }}</span>
           </div>
-          <div class="scrap-btn">스크랩</div>
         </div>
       </div>
     </div>
@@ -22,37 +22,33 @@
 </template>
 
 <script>
+import axios from 'axios';
+
 export default {
   name: "NewsView",
   data() {
     return {
-      newsList: [
-        {
-          title:
-            '"노도강 천지개벽 쌀줄만 알까" 1만 가구 미니신도시 만든다는 이 동네',
-          source: "매일경제",
-          time: "4시간 전",
-        },
-        {
-          title:
-            '"한 달 뒤면 울까지 20분" 환호 직주인들 신난 동네 [집코노미-접접쪽쪽]',
-          source: "한국경제",
-          time: "5시간 전",
-        },
-        {
-          title: '"돈 많아도 현남동 안산다" 김구라 신흥촌은 어디',
-          source: "머니투데이",
-          time: "6시간 전",
-        },
-        {
-          title:
-            '"신흥촌, 30평보다 10평이 더 좋다고.." OO 떠났야 돈 번다[부릿지]',
-          source: "머니투데이",
-          time: "7시간 전",
-        },
-      ],
+      newsList: [],
+      isLoading: false
     };
   },
+  methods: {
+    async fetchNews() {
+      try {
+        this.isLoading = true;
+        const response = await axios.get('http://localhost:8080/crawl/searchNews');
+        this.newsList = response.data;
+      } catch (error) {
+        console.error('뉴스 로딩 중 오류 발생:', error);
+        this.newsList = [];
+      } finally {
+        this.isLoading = false;
+      }
+    }
+  },
+  created() {
+    this.fetchNews();
+  }
 };
 </script>
 
@@ -110,6 +106,7 @@ export default {
 .news-content {
   height: calc(100vh - 126px);
   overflow-y: auto;
+  background: white;
 }
 
 .news-list {
@@ -128,6 +125,26 @@ export default {
   margin-bottom: 10px;
   color: #333;
   font-weight: 500;
+  text-decoration: none;
+  display: block;
+  cursor: pointer;
+}
+
+.news-title:hover {
+  text-decoration: underline;
+  color: #0a362f;
+}
+
+.news-description {
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 8px 0;
+  color: #666;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .news-info {
@@ -142,22 +159,6 @@ export default {
 
 .news-time {
   color: #666;
-}
-
-.scrap-btn {
-  position: absolute;
-  bottom: 20px;
-  right: 20px;
-  background: #f5f5f5;
-  padding: 4px 12px;
-  border-radius: 4px;
-  font-size: 12px;
-  color: #666;
-  cursor: pointer;
-}
-
-.scrap-btn:hover {
-  background: #e9ecef;
 }
 
 /* 스크롤바 스타일링 */
