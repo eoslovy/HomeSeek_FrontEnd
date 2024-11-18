@@ -3,7 +3,7 @@
     <div class="news-header">
       <div class="header-content">
         <span class="back-icon" @click="$emit('close')">←</span>
-        <span class="header-title">부동산 뉴스</span>
+        <span class="header-title">부동산 규제, 정책</span>
       </div>
     </div>
     <div class="news-content">
@@ -71,17 +71,15 @@ export default {
 .news-header {
   position: sticky;
   top: 0;
-  background: linear-gradient(
-    to right,
-    #60a5fa,
-    #2563eb
-  ); /* 밝고 경쾌한 느낌 */
+  background: #0a362f;
   color: white;
   padding: 15px;
   height: 56px;
   display: flex;
   align-items: center;
   z-index: 1001;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .header-content {
