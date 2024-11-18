@@ -1,31 +1,42 @@
 <template>
   <nav class="navbar navbar-expand-lg fixed-top" data-bs-theme="dark">
-    <div class="container-fluid">
-      <router-link class="navbar-brand d-flex align-items-center" to="/">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9z" stroke="#D4AF37" stroke-width="2" fill="none"/>
-        </svg>
-        <span class="brand-text ms-2">
-          <span class="home-text">Home</span><span class="seek-text">Seek</span>
-        </span>
-      </router-link>
+    <div class="container-fluid d-flex justify-content-between align-items-center">
+      <!-- 왼쪽 영역: 로고와 로그인 아이콘 -->
+      <div class="left-section d-flex align-items-center">
+        <router-link class="navbar-brand d-flex align-items-center" to="/">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9z" stroke="#D4AF37" stroke-width="2" fill="none"/>
+          </svg>
+          <span class="brand-text ms-2">
+            <span class="home-text">Home</span><span class="seek-text">Seek</span>
+          </span>
+        </router-link>
 
-      <!-- 로그인 아이콘 -->
-      <div class="ms-4 login-icon" @click="showLoginModal = true">
-        <i class="bi bi-person-circle"></i>
+        <div class="ms-4 login-icon" @click="showLoginModal = true">
+          <i class="bi bi-person-circle"></i>
+        </div>
       </div>
 
-      <!-- 검색창 -->
-      <div class="search-box ms-auto">
+      <!-- 오른쪽 영역: 검색창 -->
+      <div class="right-section">
         <input
+          v-model="searchKeyword"
           type="text"
-          class="form-control form-control-sm search-input"
+          class="search-input"
           placeholder="단어를 검색해보세요 (예: 임차인)"
+          @keyup.enter="search"
         />
-        <i class="bi bi-search search-icon"></i>
+        <i class="bi bi-search search-icon" @click="search"></i>
+        
+        <Transition name="fade">
+          <div class="search-results" v-if="searchResult && searchResult.length > 0">
+            <div class="search-result-content">
+              <p>{{ searchResult }}</p>
+            </div>
+          </div>
+        </Transition>
       </div>
 
-      <!-- 로그인 모달 -->
       <LoginModal :show="showLoginModal" @close="showLoginModal = false" />
     </div>
   </nav>
@@ -33,6 +44,7 @@
 
 <script>
 import LoginModal from "./LoginModal.vue";
+import axios from 'axios';
 
 export default {
   name: "TheHeader",
@@ -43,6 +55,8 @@ export default {
     return {
       showLoginModal: false,
       isLoggedIn: false,
+      searchKeyword: '',
+      searchResult: null,
     };
   },
   methods: {
@@ -52,6 +66,26 @@ export default {
       localStorage.removeItem("user");
       this.$router.push("/");
     },
+    async search() {
+      if (!this.searchKeyword.trim()) return;
+      
+      try {
+        const response = await axios.post('http://localhost:8080/openai/search', {
+          keyword: this.searchKeyword
+        });
+        this.searchResult = response.data;
+      } catch (error) {
+        console.error('검색 중 오류가 발생했습니다:', error);
+      }
+    },
+  },
+  watch: {
+    // searchKeyword 감시자 추가
+    searchKeyword(newVal) {
+      if (!newVal.trim()) {
+        this.searchResult = null;
+      }
+    }
   },
   created() {
     const user = localStorage.getItem("user");
@@ -64,16 +98,34 @@ export default {
 </script>
 
 <style scoped>
-.btn-link {
-  background: none;
-  border: none;
-  padding: 0;
-  text-decoration: none;
-  cursor: pointer;
+.navbar {
+  padding: 0.8rem 1rem;
+  background-color: rgba(33, 37, 41, 0.95) !important;
 }
 
-.btn-link:hover {
+.container-fluid {
+  padding: 0 1.5rem;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.brand-text {
+  font-size: 26px;
+  font-weight: 600;
+}
+
+.home-text {
   color: #ffffff;
+}
+
+.seek-text {
+  color: #D4AF37;
+}
+
+.navbar-brand svg {
+  margin-top: -4px;
 }
 
 .login-icon {
@@ -97,39 +149,40 @@ export default {
   font-size: 28px;
 }
 
-.navbar {
-  padding: 0.8rem 1rem;
-  background-color: rgba(33, 37, 41, 0.95) !important;
+.left-section {
+  flex: 0 0 auto;
 }
 
-.container-fluid {
-  padding: 0 1.5rem;
-}
-
-.search-box {
+.right-section {
   position: relative;
   width: 300px;
-}
-
-.search-box input {
-  padding: 10px 35px 10px 15px;
-  background: rgba(212, 175, 55, 0.1);
-  border: 1px solid #D4AF37;
-  color: #D4AF37;
   height: 42px;
-  font-size: 14px;
-  font-weight: 500;
+  display: flex;
+  align-items: center;
 }
 
-.search-box input::placeholder {
-  color: rgba(212, 175, 55, 0.8);
-  font-weight: 600;
+.search-input {
+  width: 100%;
+  height: 42px;
+  line-height: 42px;
+  background: rgba(33, 37, 41, 0.95) !important;
+  border: 1px solid #D4AF37;
+  border-radius: 4px;
+  color: #D4AF37;
+  padding: 0 40px 0 12px;
 }
 
-.search-box input:focus {
-  background: rgba(212, 175, 55, 0.15);
+.search-input:focus {
+  background: rgba(33, 37, 41, 0.95) !important;
   border-color: #D4AF37;
   box-shadow: 0 0 0 0.2rem rgba(212, 175, 55, 0.25);
+  border-radius: 4px 4px 0 0;
+  outline: none;
+}
+
+.search-input::placeholder {
+  color: rgba(212, 175, 55, 0.8);
+  font-weight: 500;
 }
 
 .search-icon {
@@ -139,22 +192,57 @@ export default {
   transform: translateY(-50%);
   color: #D4AF37;
   font-size: 16px;
+  cursor: pointer;
 }
 
-.brand-text {
-  font-size: 26px;
-  font-weight: 600;
+.search-results {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: rgba(33, 37, 41, 0.95);
+  border: 1px solid #D4AF37;
+  border-top: none;
+  border-radius: 0 0 4px 4px;
+  max-height: 400px;
+  overflow-y: auto;
+  z-index: 1000;
 }
 
-.home-text {
+.search-result-content {
+  padding: 15px;
   color: #ffffff;
+  font-size: 14px;
+  line-height: 1.6;
 }
 
-.seek-text {
-  color: #D4AF37;
+.search-result-content p {
+  margin: 0;
+  white-space: pre-wrap;
 }
 
-.navbar-brand svg {
-  margin-top: -4px;
+/* 스크롤바 스타일링 */
+.search-results::-webkit-scrollbar {
+  width: 8px;
+}
+
+.search-results::-webkit-scrollbar-track {
+  background: rgba(33, 37, 41, 0.95);
+}
+
+.search-results::-webkit-scrollbar-thumb {
+  background: #D4AF37;
+  border-radius: 4px;
+}
+
+/* 페이드 효과 */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>
