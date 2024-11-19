@@ -1,47 +1,55 @@
-import { fetchSido, fetchGugun, fetchDong } from '@/api/region'
+import { fetchSido, fetchGuNames, fetchDongNames } from "@/api/region";
 
 export default {
   namespaced: true,
   state: {
     sidoList: [],
     gugunList: [],
-    dongList: []
+    dongList: [],
   },
   mutations: {
     SET_SIDO_LIST(state, sidos) {
-      state.sidoList = sidos
+      state.sidoList = sidos;
     },
-    SET_GUGUN_LIST(state, guguns) {
-      state.gugunList = guguns
+    setGugunList(state, guguns) {
+      state.gugunList = guguns;
     },
-    SET_DONG_LIST(state, dongs) {
-      state.dongList = dongs
-    }
+    setDongList(state, dongList) {
+      state.dongList = dongList;
+    },
   },
   actions: {
     async fetchSidoList({ commit }) {
       try {
-        const response = await fetchSido()
-        commit('SET_SIDO_LIST', response.data)
+        const response = await fetchSido();
+        commit("SET_SIDO_LIST", response.data);
       } catch (error) {
-        console.error('Error fetching sido list:', error)
+        console.error("Error fetching sido list:", error);
       }
     },
-    async fetchGugunList({ commit }, sidoCode) {
+    async fetchGugunList({ commit }, sido) {
       try {
-        const response = await fetchGugun(sidoCode)
-        commit('SET_GUGUN_LIST', response.data)
+        const response = await fetchGuNames(sido);
+        const formattedGuList = response.data.map((gu) => ({
+          code: gu.guCode,
+          name: gu.guName,
+        }));
+        commit("setGugunList", formattedGuList);
       } catch (error) {
-        console.error('Error fetching gugun list:', error)
+        console.error("Error fetching gugun list:", error);
       }
     },
-    async fetchDongList({ commit }, gugunCode) {
+    async fetchDongList({ commit }, { si, gu }) {
       try {
-        const response = await fetchDong(gugunCode)
-        commit('SET_DONG_LIST', response.data)
+        const response = await fetchDongNames(si, gu);
+        const formattedDongList = response.data.map((dong) => ({
+          code: dong.dongCode,
+          name: dong.dongName,
+        }));
+        commit("setDongList", formattedDongList);
       } catch (error) {
-        console.error('Error fetching dong list:', error)
+        console.error("Error fetching dong list:", error);
       }
-    }
-  }
-}
+    },
+  },
+};

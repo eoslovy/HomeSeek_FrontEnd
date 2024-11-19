@@ -34,11 +34,14 @@ export default {
       if (!this.searchKeyword.trim()) return;
 
       try {
-        const response = await axios.get(`http://localhost:8080/api/houses`, {
-          params: {
-            keyword: this.searchKeyword,
-          },
-        });
+        const response = await axios.get(
+          `http://localhost:8080/map/getEstateByName`,
+          {
+            params: {
+              keyword: this.searchKeyword,
+            },
+          }
+        );
 
         this.$store.commit("house/setHouses", response.data);
       } catch (error) {

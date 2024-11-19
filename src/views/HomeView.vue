@@ -76,18 +76,17 @@ export default {
   },
   methods: {
     toggleFilter() {
-      this.showFilter = !this.showFilter;
-      if (!this.showFilter) {
-        // RegionFilter 컴포넌트 참조를 통해 초기화 메서드 호출
+      if (this.showFilter && this.$refs.regionFilter) {
         this.$refs.regionFilter.resetSelection();
       }
+      this.showFilter = !this.showFilter;
     },
     viewHouseOnMap(house) {
       // TheMap 컴포넌트의 showMarker 메서드 호출
       this.$refs.map.showMarker({
         lat: house.lat,
         lng: house.lng,
-        title: house.name,
+        title: house.title,
       });
     },
     handleNavChange(navItem) {
