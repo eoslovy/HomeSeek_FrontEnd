@@ -59,6 +59,7 @@
 
 <script>
 import { mapState, mapActions } from "vuex";
+import { fetchDongNames, fetchGuNames } from "../api/region";
 
 export default {
   name: "RegionFilter",
@@ -86,20 +87,39 @@ export default {
   methods: {
     ...mapActions({
       fetchSidoList: "region/fetchSidoList",
-      fetchGugunList: "region/fetchGugunList",
-      fetchDongList: "region/fetchDongList",
     }),
-    selectSido(sido) {
+    async selectSido(sido) {
       this.selectedSido = sido;
-      this.fetchGugunList(sido.code);
+      try {
+        const response = await fetchGuNames(sido.name);
+        const formattedGuList = response.data.map((gu) => ({
+          code: gu.guCode,
+          name: gu.guName,
+        }));
+        this.$store.commit("region/setGugunList", formattedGuList);
+      } catch (error) {
+        console.error("구/군 목록 조회 중 오류 발생:", error);
+      }
     },
-    selectGugun(gugun) {
+    async selectGugun(gugun) {
       this.selectedGugun = gugun;
-      this.fetchDongList(gugun.code);
+      try {
+        const response = await fetchDongNames(
+          this.selectedSido.name,
+          gugun.name
+        );
+        const formattedDongList = response.data.map((dong) => ({
+          code: dong.dongCode,
+          name: dong.dongName,
+        }));
+        this.$store.commit("region/setDongList", formattedDongList);
+      } catch (error) {
+        console.error("동 목록 조회 중 오류 발생:", error);
+      }
     },
     selectDong(dong) {
       this.selectedDong = dong;
-      this.fetchDongList(dong.code);
+      this.$store.commit("region/setDongList", []); // 동 목록 초기화
     },
     backToSido() {
       this.selectedSido = null;
@@ -114,9 +134,8 @@ export default {
     },
     backToDong() {
       this.selectedDong = null;
-      this.showDongList = false;
       if (this.selectedGugun) {
-        this.fetchDongList(this.selectedGugun.code);
+        this.selectGugun(this.selectedGugun); // 현재 선택된 구/군의 동 목록을 다시 불러옴
       }
     },
     resetSelection() {
@@ -130,7 +149,7 @@ export default {
     show: {
       immediate: true,
       handler(newVal) {
-        if (newVal && !this.sidoList.length) {
+        if (newVal && this.sidoList && !this.sidoList.length) {
           this.fetchSidoList();
         }
       },
