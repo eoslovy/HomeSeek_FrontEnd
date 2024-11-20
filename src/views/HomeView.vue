@@ -12,9 +12,7 @@
       <div class="nav-section">
         <NavigationBar @nav-change="handleNavChange" />
       </div>
-
-            <!-- 테스트 버튼 추가 -->
-            <button class="test-button" @click="toggleRightModal">
+      <button class="test-button" @click="toggleRightModal">
         상세 정보 보기
       </button>
 
@@ -257,7 +255,6 @@ export default {
     handleSearchKeywordChange(keyword) {
       this.currentSearchKeyword = keyword;
     },
-  },
     toggleRightModal() {
       this.showRightModal = !this.showRightModal;
     },
@@ -268,7 +265,6 @@ export default {
       return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     },
     updateChartData() {
-      // 실제 데이터 업데이트 시 사용할 메서드
       this.chartData = {
         labels: this.priceHistory.map(item => item.date),
         datasets: [{
