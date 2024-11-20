@@ -15,7 +15,7 @@ export default {
   },
   mounted() {
     const script = document.createElement("script");
-    script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=34932ec8f94f62ada36f0d8949296a56&libraries=services&autoload=false`;
+    script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=34932ec8f94f62ada36f0d8949296a56&libraries=services,clusterer&autoload=false`;
     script.async = true;
     script.onload = () => {
       kakao.maps.load(() => {

@@ -9,7 +9,10 @@ export default {
     return {
       map: null,
       marker: null,
-      infowindow: null
+      infowindow: null,
+      markers: [],
+      bounds: null,
+      clusterer: null
     }
   },
   mounted() {
@@ -22,6 +25,30 @@ export default {
           level: 3
         }
         this.map = new kakao.maps.Map(container, options)
+        this.bounds = new kakao.maps.LatLngBounds()
+        
+        // 클러스터러 초기화
+        this.clusterer = new kakao.maps.MarkerClusterer({
+          map: this.map,
+          averageCenter: true,
+          minLevel: 6,
+          disableClickZoom: true,
+          gridSize: 60,
+          styles: [{
+            width: '50px',
+            height: '50px',
+            background: 'rgba(10, 54, 47, .8)',
+            borderRadius: '25px',
+            color: '#fff',
+            textAlign: 'center',
+            lineHeight: '50px',
+            fontSize: '14px',
+            fontWeight: 'bold'
+          }]
+        });
+
+        // 지도 이동 이벤트 리스너
+        kakao.maps.event.addListener(this.map, 'idle', this.updateMarkers);
       } catch (error) {
         console.error('카카오맵 초기화 실패:', error)
       }
@@ -34,30 +61,70 @@ export default {
     }
   },
 
-    methods: {
-    showMarker(location) {
-      const kakao = window.kakao
-      
-      if (this.marker) {
-        this.marker.setMap(null)
+  methods: {
+    clearMarkers() {
+      if (this.clusterer) {
+        this.clusterer.clear();
       }
-      
-      this.marker = new kakao.maps.Marker({
-        position: new kakao.maps.LatLng(location.lat, location.lng)
-      })
-      
-      this.marker.setMap(this.map)
-      this.map.setCenter(new kakao.maps.LatLng(location.lat, location.lng))
-      
-      if (this.infowindow) {
-        this.infowindow.close()
-      }
-      
-      this.infowindow = new kakao.maps.InfoWindow({
-        content: `<div style="padding:5px;">${location.title}</div>`
-      })
-      
-      this.infowindow.open(this.map, this.marker)
+      this.markers = [];
+      this.bounds = new window.kakao.maps.LatLngBounds();
+    },
+    
+    showMarkers(apartments) {
+      this.clearMarkers();
+      this.allApartments = apartments; // 전체 아파트 데이터 저장
+      this.updateMarkers(); // 현재 영역에 있는 마커만 표시
+    },
+
+    updateMarkers() {
+      if (!this.allApartments) return;
+
+      const bounds = this.map.getBounds();
+      const markers = [];
+
+      this.allApartments.forEach(apt => {
+        const position = new window.kakao.maps.LatLng(apt.latitude, apt.longitude);
+        
+        if (bounds.contain(position)) {
+          const marker = new window.kakao.maps.Marker({
+            position: position
+          });
+          
+          const infowindow = new window.kakao.maps.InfoWindow({
+            content: `<div style="padding:5px;font-size:12px;">${apt.aptName}</div>`,
+            removable: true
+          });
+          
+          marker.infowindow = infowindow;
+          
+          window.kakao.maps.event.addListener(marker, 'click', () => {
+            this.markers.forEach(m => {
+              if (m.infowindow) m.infowindow.close();
+            });
+            infowindow.open(this.map, marker);
+          });
+          
+          markers.push(marker);
+          this.bounds.extend(position);
+        }
+      });
+
+      // 기존 클러스터 제거 후 새로운 마커 추가
+      this.clusterer.clear();
+      this.clusterer.addMarkers(markers);
+      this.markers = markers;
+    },
+    
+    showMarker({ lat, lng, title }) {
+      const position = new window.kakao.maps.LatLng(lat, lng);
+      this.map.setCenter(position);
+      this.map.setLevel(3);
+    },
+    
+    setCenter(lat, lng) {
+      const position = new window.kakao.maps.LatLng(lat, lng);
+      this.map.setCenter(position);
+      this.map.setLevel(8);
     }
   }
 }
