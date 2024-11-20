@@ -1,5 +1,4 @@
-import { fetchSido, fetchGuNames, fetchDongNames } from "@/api/region";
-
+import { fetchSiNames, fetchGuNames, fetchDongNames } from "@/api/region";
 export default {
   namespaced: true,
   state: {
@@ -8,21 +7,25 @@ export default {
     dongList: [],
   },
   mutations: {
-    SET_SIDO_LIST(state, sidos) {
-      state.sidoList = sidos;
-    },
     setGugunList(state, guguns) {
       state.gugunList = guguns;
     },
     setDongList(state, dongList) {
       state.dongList = dongList;
     },
+    setSidoList(state, sidoList) {
+      state.sidoList = sidoList;
+    },
   },
   actions: {
     async fetchSidoList({ commit }) {
       try {
-        const response = await fetchSido();
-        commit("SET_SIDO_LIST", response.data);
+        const response = await fetchSiNames();
+        const formattedSidoList = response.data.map((si) => ({
+          code: si.siCode,
+          name: si.siName,
+        }));
+        commit("setSidoList", formattedSidoList);
       } catch (error) {
         console.error("Error fetching sido list:", error);
       }

@@ -3,7 +3,10 @@
     <TheMap ref="map" />
 
     <div id="search-box" class="search-container">
-      <SearchBar @toggle-filter="toggleFilter" />
+      <SearchBar 
+        @toggle-filter="toggleFilter" 
+        @search-keyword-change="handleSearchKeywordChange"
+      />
       <RegionFilter :show="showFilter" ref="regionFilter" />
 
       <div class="nav-section">
@@ -16,6 +19,7 @@
           :houses="houses"
           :showBuyTable="showBuyTable"
           :showRentTable="showRentTable"
+          :searchKeyword="currentSearchKeyword"
           @view-house="viewHouseOnMap"
         />
       </div>
@@ -67,6 +71,7 @@ export default {
       currentNav: null,
       showBuyTable: true,
       showRentTable: false,
+      currentSearchKeyword: "",
     };
   },
   computed: {
@@ -94,6 +99,9 @@ export default {
     },
     closeNav() {
       this.currentNav = null;
+    },
+    handleSearchKeywordChange(keyword) {
+      this.currentSearchKeyword = keyword;
     },
   },
 };
