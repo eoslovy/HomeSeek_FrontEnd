@@ -32,26 +32,24 @@ export default {
       fetchDongList: "region/fetchDongList",
     }),
     async selectSido(sido) {
-      this.selectedSido = sido;
-      
-      // 지도 이동
-      this.$parent.$refs.map.setCenter(sido.latitude, sido.longitude);
-      
-      // 구군 목록 가져오기
-      await this.fetchGugunList(sido.name);
-      
       try {
+        this.selectedSido = sido;
+        this.selectedGugun = null;
+        this.selectedDong = null;
+
+        await this.fetchGugunList(sido.name);
+
         const response = await houseApi.searchByToggleWithSi(sido.code);
-        const apartments = response.data;
         
-        // 기존 마커 제거하고 새로운 마커 표시
-        this.$parent.$refs.map.showMarkers(apartments);
-        
-        // Vuex store에 아파트 목록 저장
-        this.$store.commit("house/setHouses", apartments);
-        
+        const mapRef = this.$parent.$refs.map;
+        if (mapRef?.map) {
+          mapRef.map.setLevel(9);
+          mapRef.map.setCenter(new kakao.maps.LatLng(sido.latitude, sido.longitude));
+          mapRef.showMarkers(response.data);
+        }
+
       } catch (error) {
-        console.error("아파트 정보 조회 중 오류 발생:", error);
+        console.error('시도 선택 중 오류 발생:', error);
       }
     },
     async selectGugun(gugun) {
