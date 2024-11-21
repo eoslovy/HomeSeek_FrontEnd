@@ -5,7 +5,7 @@
 </template>
 
 <script>
-import { toRaw } from 'vue'
+import { toRaw } from "vue";
 
 export default {
   data() {
@@ -16,29 +16,31 @@ export default {
       selectedInfowindow: null,
       clusterer: null,
       markerQueue: [],
-      isProcessingMarkers: false
-    }
+      isProcessingMarkers: false,
+    };
   },
 
   mounted() {
     if (window?.kakaoMapsLoaded) {
       this.initMap();
     } else {
-      window.addEventListener("kakao-maps-sdk-loaded", this.initMap, { once: true });
+      window.addEventListener("kakao-maps-sdk-loaded", this.initMap, {
+        once: true,
+      });
     }
   },
 
   methods: {
     async initMap() {
-      const container = document.getElementById('map');
+      const container = document.getElementById("map");
       if (!container || !window?.kakao?.maps) return;
 
       try {
         const rawKakao = toRaw(window.kakao);
-        
+
         this.map = new rawKakao.maps.Map(container, {
           center: new rawKakao.maps.LatLng(37.5012743, 127.039585),
-          level: 3
+          level: 3,
         });
 
         this.clusterer = new rawKakao.maps.MarkerClusterer({
@@ -49,27 +51,28 @@ export default {
           minClusterSize: 5,
           disableClickZoom: false,
           calculator: [10, 30, 50],
-          styles: [{
-            width: '50px',
-            height: '50px',
-            background: 'rgba(10, 54, 47, .8)',
-            color: '#fff',
-            textAlign: 'center',
-            lineHeight: '50px',
-            borderRadius: '25px',
-            fontSize: '14px',
-            fontWeight: 'bold'
-          }]
+          styles: [
+            {
+              width: "50px",
+              height: "50px",
+              background: "rgba(10, 54, 47, .8)",
+              color: "#fff",
+              textAlign: "center",
+              lineHeight: "50px",
+              borderRadius: "25px",
+              fontSize: "14px",
+              fontWeight: "bold",
+            },
+          ],
         });
 
         let timeout;
-        kakao.maps.event.addListener(this.map, 'dragend', () => {
+        kakao.maps.event.addListener(this.map, "dragend", () => {
           if (timeout) clearTimeout(timeout);
           timeout = setTimeout(() => {
             this.processMarkerQueue();
           }, 150);
         });
-
       } catch (error) {
         console.error("카카오맵 초기화 중 오류:", error);
       }
@@ -77,20 +80,51 @@ export default {
 
     async processMarkerQueue() {
       if (this.isProcessingMarkers || !this.markerQueue.length) return;
-      
+
       this.isProcessingMarkers = true;
       const BATCH_SIZE = 100;
-      
+
       try {
         while (this.markerQueue.length) {
           const batch = this.markerQueue.splice(0, BATCH_SIZE);
           if (this.clusterer) {
             this.clusterer.addMarkers(batch);
           }
-          await new Promise(resolve => setTimeout(resolve, 10));
+          await new Promise((resolve) => setTimeout(resolve, 10));
         }
       } finally {
         this.isProcessingMarkers = false;
+      }
+    },
+
+    showMarker(apt) {
+      if (!this.map || !apt || !apt.lat || !apt.lng) {
+        console.error("유효하지 않은 데이터:", apt);
+        return;
+      }
+
+      try {
+        const position = new kakao.maps.LatLng(apt.lat, apt.lng);
+
+        this.clearMarkers();
+
+        this.selectedMarker = new kakao.maps.Marker({
+          position: position,
+          map: this.map,
+        });
+
+        if (apt.title) {
+          this.selectedInfowindow = new kakao.maps.InfoWindow({
+            content: `<div style="padding:5px;font-size:12px;"><strong>${apt.title}</strong></div>`,
+            removable: true,
+          });
+          this.selectedInfowindow.open(this.map, this.selectedMarker);
+        }
+
+        this.map.setCenter(position);
+        this.map.setLevel(3);
+      } catch (error) {
+        console.error("마커 표시 중 오류 발생:", error);
       }
     },
 
@@ -101,18 +135,19 @@ export default {
         this.clearMarkers();
         const cur = this.map.getCenter();
         const rawKakao = toRaw(window.kakao);
-        
+
         this.markerQueue = apartments
-          .filter(apt => 
-            apt?.latitude && 
-            apt?.longitude && 
-            apt?.aptName && 
-            Math.abs(cur.getLat() - apt.latitude) < 0.5 && 
-            Math.abs(cur.getLng() - apt.longitude) < 0.5
+          .filter(
+            (apt) =>
+              apt?.latitude &&
+              apt?.longitude &&
+              apt?.aptName &&
+              Math.abs(cur.getLat() - apt.latitude) < 0.5 &&
+              Math.abs(cur.getLng() - apt.longitude) < 0.5
           )
-          .map(apt => {
+          .map((apt) => {
             const marker = new rawKakao.maps.Marker({
-              position: new rawKakao.maps.LatLng(apt.latitude, apt.longitude)
+              position: new rawKakao.maps.LatLng(apt.latitude, apt.longitude),
             });
             marker.aptData = { aptName: apt.aptName };
             return marker;
@@ -132,9 +167,9 @@ export default {
         this.clusterer.clear();
       }
       this.markers = [];
-    }
-  }
-}
+    },
+  },
+};
 </script>
 
 <style>
