@@ -19,6 +19,10 @@
 
       <!-- 오른쪽 영역: 검색창 -->
       <div class="right-section">
+        <button class="trend-button" @click="showTrendModal = true">
+          <i class="bi bi-graph-up"></i>
+          실시간 트렌드
+        </button>
         <input
           v-model="searchKeyword"
           type="text"
@@ -38,22 +42,26 @@
       </div>
 
       <LoginModal :show="showLoginModal" @close="showLoginModal = false" />
+      <TrendModal :show="showTrendModal" @close="showTrendModal = false" />
     </div>
   </nav>
 </template>
 
 <script>
 import LoginModal from "./LoginModal.vue";
+import TrendModal from "./TrendModal.vue";
 import axios from 'axios';
 
 export default {
   name: "TheHeader",
   components: {
     LoginModal,
+    TrendModal,
   },
   data() {
     return {
       showLoginModal: false,
+      showTrendModal: false,
       isLoggedIn: false,
       searchKeyword: '',
       searchResult: null,
@@ -155,10 +163,11 @@ export default {
 
 .right-section {
   position: relative;
-  width: 300px;
+  width: 500px;
   height: 42px;
   display: flex;
   align-items: center;
+  gap: 10px;
 }
 
 .search-input {
@@ -244,5 +253,28 @@ export default {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+.trend-button {
+  height: 42px;
+  padding: 0 15px;
+  background: transparent;
+  border: 1px solid #D4AF37;
+  border-radius: 4px;
+  color: #D4AF37;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.trend-button:hover {
+  background: rgba(212, 175, 55, 0.1);
+}
+
+.trend-button i {
+  font-size: 16px;
 }
 </style>

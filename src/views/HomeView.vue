@@ -12,18 +12,16 @@
       <div class="nav-section">
         <NavigationBar @nav-change="handleNavChange" />
       </div>
-      <button class="test-button" @click="toggleRightModal">
-        상세 정보 보기
-      </button>
 
       <div class="results-section">
         <HouseList
-          v-if="!showFilter"
+          v-if="!showFilter && houses.length > 0"
           :houses="houses"
           :showBuyTable="showBuyTable"
           :showRentTable="showRentTable"
           :searchKeyword="currentSearchKeyword"
           @view-house="viewHouseOnMap"
+          @select-house="fetchHouseDeals"
         />
       </div>
     </div>
@@ -46,33 +44,38 @@
     <div v-if="showRightModal" class="right-modal">
       <div class="modal-header">
         <span class="back-icon" @click="closeRightModal">←</span>
-        <span class="header-title">현대아파트 시세정보</span>
-        <button class="listing-button" @click="toggleListingModal">매물보기</button>
+        <span class="header-title">{{ selectedHouse.aptName }} 거래정보</span>
+        <button class="listing-button" @click="fetchAndShowListings">
+          매물보기
+        </button>
       </div>
       <div class="modal-content">
-        <div class="price-info">
-          <div class="current-price">
-            <div class="label">최근 실거래 기준 1개월 평균</div>
-            <div class="price">30억</div>
-          </div>
-          <div class="compare-price">
-            <div class="label">매물 가격 평균</div>
-            <div class="price">32억</div>
-          </div>
+        <div class="area-filter">
+          <select v-model="selectedArea" @change="filterByArea" class="area-select">
+            <option value="all">전체 면적</option>
+            <option v-for="area in uniqueAreas" :key="area" :value="area">
+              {{ area }}㎡
+            </option>
+          </select>
         </div>
+
         <div class="chart-container">
-          <Line :data="chartData" :options="chartOptions" />
+          <Line
+            v-if="chartData.datasets"
+            :data="chartData"
+            :options="chartOptions"
+          />
         </div>
         <div class="price-history">
           <div class="history-header">
             <span>거래일</span>
-            <span>타입</span>
-            <span>가격</span>
+            <span>면적</span>
+            <span>격</span>
           </div>
-          <div v-for="(item, index) in priceHistory" :key="index" class="history-item">
-            <span>{{ item.date }}</span>
-            <span>{{ item.type }}</span>
-            <span>{{ item.price }}억</span>
+          <div v-for="deal in filteredDeals" :key="deal.id" class="history-item">
+            <span>{{ formatDate(deal.dealYear, deal.dealMonth, deal.dealDay) }}</span>
+            <span>{{ deal.excluUseAr }}㎡</span>
+            <span>{{ formatPrice(deal.dealAmount) }}만원</span>
           </div>
         </div>
       </div>
@@ -84,22 +87,49 @@
     <div v-if="showListingModal" class="listing-modal">
       <div class="modal-header">
         <span class="back-icon" @click="closeListingModal">←</span>
-        <span class="header-title">현대아파트 매물</span>
+        <span class="header-title">{{ selectedHouse.aptName }} 매물</span>
+        <button class="ai-button" @click="getAIAdvice">
+          AI 추천
+        </button>
       </div>
       <div class="modal-content">
+        <div class="area-filter">
+          <select v-model="selectedListingArea" class="area-select">
+            <option value="all">전체 면적</option>
+            <option v-for="area in uniqueListingAreas" :key="area" :value="area">
+              {{ area }}㎡
+            </option>
+          </select>
+        </div>
         <div class="listing-list">
-          <!-- 테스트용 더미 데이터 -->
-          <div v-for="(item, index) in listingData" :key="index" class="listing-item">
+          <div v-for="item in filteredListings" :key="item.id" class="listing-item">
             <div class="listing-info">
-              <div class="listing-price">{{ item.price }}억</div>
-              <div class="listing-detail">{{ item.type }} | {{ item.area }}㎡</div>
-              <div class="listing-location">{{ item.floor }}층</div>
+              <div class="listing-price">{{ formatPrice(item.price) }}만원</div>
+              <div class="listing-detail">매매 | {{ item.excluUseAr }}㎡</div>
+              <div class="listing-location">{{ item.description }}</div>
             </div>
             <div class="listing-contact">
-              <div class="agent">{{ item.agent }}</div>
-              <div class="phone">{{ item.phone }}</div>
+              <div class="agent">{{ item.agentNm }}</div>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  </transition>
+
+  <!-- AI 추천 모달 -->
+  <transition name="fade">
+    <div v-if="showAIModal" class="ai-modal">
+      <div class="modal-header">
+        <span class="back-icon" @click="closeAIModal">←</span>
+        <span class="header-title">AI 매물 분석</span>
+      </div>
+      <div class="modal-content">
+        <div v-if="isLoading" class="loading">
+          분석 중...
+        </div>
+        <div v-else class="ai-content">
+          {{ aiAdvice }}
         </div>
       </div>
     </div>
@@ -129,6 +159,7 @@ import NewsView from "@/components/navbar/NewsView.vue";
 import PolicyView from "@/components/navbar/PolicyView.vue";
 import LoanView from "@/components/navbar/LoanView.vue";
 import AnalysisView from "@/components/navbar/AnalysisView.vue";
+import axios from 'axios';
 
 ChartJS.register(
   CategoryScale,
@@ -157,79 +188,60 @@ export default {
   data() {
     return {
       showFilter: false,
-      currentNav: null,
       showBuyTable: true,
       showRentTable: false,
-      currentSearchKeyword: "",
+      currentNav: '',
+      currentSearchKeyword: '',
+      showListingModal: false,
+      dealList: [],
+      selectedHouse: {},
       showRightModal: false,
-      priceHistory: [
-        { date: '2024.01.15', type: '매매', price: 30 },
-        { date: '2023.11.20', type: '매매', price: 25 },
-        { date: '2023.09.05', type: '매매', price: 25 },
-        { date: '2023.06.10', type: '매매', price: 20 },
-      ],
       chartData: {
-        labels: ['2023.06', '2023.09', '2023.11', '2024.01'],
-        datasets: [{
-          label: '매매가',
-          data: [20, 25, 25, 30],
-          borderColor: '#0a362f',
-          tension: 0.1
-        }]
+        labels: [],
+        datasets: []
       },
       chartOptions: {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
           legend: {
-            display: false
-          }
-        },
-        scales: {
-          y: {
-            beginAtZero: false,
-            ticks: {
-              callback: function(value) {
-                return value + '억';
-              }
-            }
+            display: true
+          },
+          title: {
+            display: true,
+            text: '거래가격 추이'
           }
         }
       },
-      // ... 기존 data ...
-      showListingModal: false,
-      listingData: [
-        {
-          price: 32,
-          type: '매매',
-          area: 84,
-          floor: '13',
-          agent: '우리공인중개사',
-          phone: '010-1234-5678'
-        },
-        {
-          price: 31.5,
-          type: '매매',
-          area: 84,
-          floor: '8',
-          agent: '한국공인중개사',
-          phone: '010-2345-6789'
-        },
-        // 더 많은 더미 데이터 추가 가능
-      ]
+      selectedArea: 'all',
+      listingData: [],
+      selectedListingArea: 'all',
+      showAIModal: false,
+      isLoading: false,
+      aiAdvice: ''
     };
   },
   computed: {
     ...mapState({
       houses: (state) => state.house.houses,
     }),
-    averagePrice() {
-      const prices = this.priceHistory.map(item => item.price);
-      const sum = prices.reduce((a, b) => a + b, 0);
-      return (sum / prices.length).toFixed(1);
+    uniqueAreas() {
+      return [...new Set(this.dealList.map(deal => deal.excluUseAr))].sort((a, b) => a - b);
     },
-    latestPrice() {
-      return this.priceHistory[0].price;
+    filteredDeals() {
+      if (this.selectedArea === 'all') {
+        return this.dealList;
+      }
+      return this.dealList.filter(deal => deal.excluUseAr === this.selectedArea);
+    },
+    uniqueListingAreas() {
+      return [...new Set(this.listingData.map(item => item.excluUseAr))].sort((a, b) => a - b);
+    },
+    filteredListings() {
+      if (this.selectedListingArea === 'all') {
+        return this.listingData;
+      }
+      return this.listingData.filter(item => item.excluUseAr === this.selectedListingArea);
     }
   },
   methods: {
@@ -254,6 +266,9 @@ export default {
     },
     handleSearchKeywordChange(keyword) {
       this.currentSearchKeyword = keyword;
+      if (!keyword) {
+        this.$store.commit('house/setHouses', []);
+      }
     },
     toggleRightModal() {
       this.showRightModal = !this.showRightModal;
@@ -262,14 +277,27 @@ export default {
       this.showRightModal = false;
     },
     formatPrice(price) {
-      return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+      if (!price) return '';
+      return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
     },
     updateChartData() {
+      const dealsToShow = this.selectedArea === 'all' 
+        ? this.dealList 
+        : this.dealList.filter(deal => deal.excluUseAr === this.selectedArea);
+
+      const sortedDeals = [...dealsToShow].sort((a, b) => {
+        const dateA = new Date(a.dealYear, a.dealMonth - 1, a.dealDay);
+        const dateB = new Date(b.dealYear, b.dealMonth - 1, b.dealDay);
+        return dateA - dateB;
+      });
+
       this.chartData = {
-        labels: this.priceHistory.map(item => item.date),
+        labels: sortedDeals.map(deal => 
+          `${deal.dealYear}.${String(deal.dealMonth).padStart(2, '0')}`
+        ),
         datasets: [{
-          label: '매매가',
-          data: this.priceHistory.map(item => item.price),
+          label: '거래가격',
+          data: sortedDeals.map(deal => deal.dealAmount),
           borderColor: '#0a362f',
           tension: 0.1
         }]
@@ -280,6 +308,66 @@ export default {
     },
     closeListingModal() {
       this.showListingModal = false;
+    },
+    async fetchHouseDeals(houseInfo) {
+      try {
+        const response = await axios.post('/deals/search', {
+          aptName: houseInfo.aptName,
+          si: houseInfo.si,
+          gu: houseInfo.gu
+        });
+        this.dealList = response.data;
+        this.selectedHouse = houseInfo;
+        this.showRightModal = true;
+        this.selectedArea = 'all';
+        this.updateChartData();
+      } catch (error) {
+        console.error('거래 정보 조회 실패:', error);
+      }
+    },
+    formatDate(year, month, day) {
+      return `${year}.${String(month).padStart(2, '0')}.${String(day).padStart(2, '0')}`;
+    },
+    filterByArea() {
+      this.updateChartData();
+    },
+    async fetchAndShowListings() {
+      try {
+        const response = await axios.post('/sales/search', {
+          aptName: this.selectedHouse.aptName,
+          si: this.selectedHouse.si,
+          gu: this.selectedHouse.gu
+        });
+        this.listingData = response.data;
+        this.showListingModal = true;
+      } catch (error) {
+        console.error('매물 정보 조 실패:', error);
+      }
+    },
+    async getAIAdvice() {
+      this.isLoading = true;
+      this.showAIModal = true;
+      
+      const requestData = {
+        aptName: this.selectedHouse.aptName,
+        si: this.selectedHouse.si,
+        gu: this.selectedHouse.gu
+      };
+      console.log('요청 데이터:', requestData);
+
+      try {
+        const response = await axios.post('/openai/advice', requestData);
+        console.log('AI 응답:', response.data);
+        this.aiAdvice = response.data;
+      } catch (error) {
+        console.error('AI 추천 조회 실패:', error.response || error);
+        this.aiAdvice = '죄송합니다. 현재 AI 분석을 제공할 수 없습니다.';
+      } finally {
+        this.isLoading = false;
+      }
+    },
+    closeAIModal() {
+      this.showAIModal = false;
     }
   }
 };
@@ -358,6 +446,7 @@ export default {
   align-items: center;
   gap: 15px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
 }
 
 .modal-content {
@@ -527,5 +616,63 @@ export default {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+.area-filter {
+  margin-bottom: 20px;
+}
+
+.area-select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #333;
+  background-color: white;
+}
+
+.area-select:focus {
+  outline: none;
+  border-color: #0a362f;
+}
+
+.ai-button {
+  margin-left: auto;
+  padding: 6px 12px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.ai-modal {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 500px;
+  max-height: 80vh;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  z-index: 1002;
+  overflow-y: auto;
+}
+
+.ai-content {
+  padding: 20px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.loading {
+  padding: 40px;
+  text-align: center;
+  font-size: 16px;
+  color: #666;
 }
 </style>

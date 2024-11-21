@@ -9,6 +9,9 @@ import 'bootstrap-icons/font/bootstrap-icons.css'
 import 'bootstrap'
 
 import './assets/css/main.css'
+import axios from 'axios';
+
+axios.defaults.baseURL = 'http://localhost:8080'; // 백엔드 서버 주소
 
 const app = createApp(App)
 

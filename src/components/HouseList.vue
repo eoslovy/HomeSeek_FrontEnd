@@ -5,13 +5,7 @@
         v-for="house in houses"
         :key="house.aptName"
         class="house-item"
-        @click="
-          $emit('view-house', {
-            lat: house.latitude,
-            lng: house.longitude,
-            title: house.aptName,
-          })
-        "
+        @click="handleHouseClick(house)"
       >
         <div class="house-main-info">
           <h3 class="house-name">
@@ -42,6 +36,21 @@ export default {
     }
   },
   methods: {
+    handleHouseClick(house) {
+      console.log('선택된 house 정보:', house);
+      
+      this.$emit('view-house', {
+        lat: house.latitude,
+        lng: house.longitude,
+        title: house.aptName,
+      });
+
+      this.$emit('select-house', {
+        aptName: house.aptName,
+        si: house.sidoName,
+        gu: house.gugunName
+      });
+    },
     getAddress(house) {
       return `${house.sidoName} ${house.gugunName} ${house.dongName}`;
     },

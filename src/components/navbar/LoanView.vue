@@ -1,172 +1,614 @@
 <template>
-  <div class="news-view">
-    <div class="news-header">
-      <div class="header-content">
-        <span class="back-icon" @click="$emit('close')">←</span>
-        <span class="header-title">대출 검색</span>
+  <div class="modal-overlay" @click.self="$emit('close')">
+    <div class="modal-container">
+      <div class="modal-header">
+        <span class="header-title">대출 계산기</span>
+        <span class="close-button" @click="$emit('close')">×</span>
       </div>
-    </div>
-    <div class="news-content">
-      <div class="news-list">
-        <div v-for="(news, index) in newsList" :key="index" class="news-item">
-          <div class="news-title">{{ news.title }}</div>
-          <div class="news-info">
-            <span class="news-source">{{ news.source }}</span>
-            <span class="news-time">{{ news.time }}</span>
+      
+      <div class="modal-content">
+        <div class="loan-view">
+          <div class="loan-header">
+            <div class="header-content">
+              <span class="back-icon" @click="$emit('close')">←</span>
+              <span class="header-title">대출 계산기</span>
+            </div>
           </div>
-          <div class="scrap-btn">스크랩</div>
+          <div class="loan-content">
+            <div class="input-section">
+              <div class="input-group">
+                <label>대출 금액</label>
+                <div class="input-wrapper">
+                  <input 
+                    type="text" 
+                    v-model="loanAmount"
+                    placeholder="0"
+                    class="input-field"
+                  >
+                  <span class="unit">원</span>
+                </div>
+                <div class="button-group">
+                  <button class="quick-button" @click="adjustAmount(-1)">초기화</button>
+                  <button class="quick-button" @click="adjustAmount(1000000)">+100만</button>
+                  <button class="quick-button" @click="adjustAmount(10000000)">+1000만</button>
+                  <button class="quick-button" @click="adjustAmount(100000000)">+1억</button>
+                </div>
+              </div>
+              
+              <hr class="divider">
+              
+              <div class="input-group">
+                <label>연 이자율</label>
+                <div class="input-wrapper">
+                  <input 
+                    type="text" 
+                    v-model="interestRate"
+                    placeholder="0"
+                    class="input-field"
+                  >
+                  <span class="unit">%</span>
+                </div>
+                <div class="button-group">
+                  <button class="quick-button" @click="adjustRate(-1)">초기화</button>
+                  <button class="quick-button" @click="adjustRate(1)">+1%</button>
+                  <button class="quick-button" @click="adjustRate(2)">+2%</button>
+                  <button class="quick-button" @click="adjustRate(5)">+5%</button>
+                </div>
+              </div>
+              
+              <hr class="divider">
+              
+              <div class="input-group">
+                <label>상환기간</label>
+                <div class="input-wrapper">
+                  <input 
+                    type="text" 
+                    v-model="loanPeriod"
+                    placeholder="0"
+                    class="input-field"
+                  >
+                  <span class="unit">년</span>
+                </div>
+                <div class="button-group">
+                  <button class="quick-button" @click="adjustPeriod(-1)">초기화</button>
+                  <button class="quick-button" @click="adjustPeriod(1)">1년</button>
+                  <button class="quick-button" @click="adjustPeriod(2)">2년</button>
+                  <button class="quick-button" @click="adjustPeriod(5)">5년</button>
+                </div>
+              </div>
+              
+              <hr class="divider">
+              
+              <div class="input-group">
+                <label>상환방식</label>
+                <select v-model="repaymentType" class="select-field">
+                  <option value="equal-principal-interest">원리금균등상환</option>
+                  <option value="equal-principal">원금균등상환</option>
+                  <option value="bullet">만기일시상환</option>
+                </select>
+              </div>
+
+              <button class="calculate-button" @click="calculateLoan">
+                계산하기
+              </button>
+            </div>
+
+            <div v-if="result" class="result-section">
+              <div class="calculation-result">
+                <h3>계산 결과</h3>
+                <div class="result-content">
+                  <p>{{ formatCurrency(loanAmount) }}원을 {{ loanPeriod }}년 동안</p>
+                  <p>{{ getRepaymentTypeText() }}으로 대출을 받았을때</p>
+                  <p>{{ interestRate }}% 기준 매월 {{ monthlyPayment }}원을 갚아야 합니다</p>
+                </div>
+              </div>
+
+              <table class="loan-summary-table">
+                <thead>
+                  <tr>
+                    <th>회차</th>
+                    <th>이자</th>
+                    <th>원금</th>
+                    <th>납입금액</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(row, index) in paymentSchedule" :key="index">
+                    <td>{{ row.period }}</td>
+                    <td class="amount">{{ formatCurrency(row.interest) }}</td>
+                    <td class="amount">{{ formatCurrency(row.principal) }}</td>
+                    <td class="amount">{{ formatCurrency(row.payment) }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 </template>
 
-<script>
-export default {
-  name: "NewsView",
-  data() {
-    return {
-      newsList: [
-        {
-          title:
-            '"노도강 천지개벽 쌀줄만 알까" 1만 가구 미니신도시 만든다는 이 동네',
-          source: "매일경제",
-          time: "4시간 전",
-        },
-        {
-          title:
-            '"한 달 뒤면 서울까지 20분" 환호 직주인들 신난 동네 [집코노미-접접쪽쪽]',
-          source: "한국경제",
-          time: "5시간 전",
-        },
-        {
-          title: '"돈 많아도 현남동 안산다" 김구라 신흥촌은 어디',
-          source: "머니투데이",
-          time: "6시간 전",
-        },
-        {
-          title:
-            '"신흥촌, 30평보다 10평이 더 좋다고.." OO 떠났야 돈 번다[부릿지]',
-          source: "머니투데이",
-          time: "7시간 전",
-        },
-      ],
-    };
-  },
-};
-</script>
-
 <style scoped>
-.news-view {
-  position: absolute;
-  top: 70px;
+.modal-overlay {
+  position: fixed;
+  top: 0;
   left: 0;
-  width: 450px;
-  height: calc(100vh - 70px);
-  background: white;
-  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
   z-index: 1000;
+  padding-top: 80px;
 }
 
-.news-header {
-  position: sticky;
-  top: 0;
+.modal-container {
+  background: white;
+  width: 90%;
+  max-width: 600px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  padding: 20px;
   background: #0a362f;
   color: white;
-  padding: 15px;
-  height: 56px;
+  border-radius: 12px 12px 0 0;
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  z-index: 1001;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.header-content {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
-
-.back-icon {
-  font-size: 20px;
-  cursor: pointer;
-  padding: 8px;
 }
 
 .header-title {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 500;
 }
 
-.news-content {
-  height: calc(100vh - 126px);
-  overflow-y: auto;
+.close-button {
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0 8px;
 }
 
-.news-list {
+.modal-content {
+  padding: 24px;
+  overflow-y: auto;
+  max-height: calc(90vh - 70px);
+}
+
+.loan-view {
+  position: relative;
+  width: 100%;
+  height: auto;
+  background: transparent;
+  box-shadow: none;
+}
+
+.loan-header {
+  display: none;
+}
+
+.loan-content {
+  height: auto;
   padding: 0;
 }
 
-.news-item {
-  padding: 20px;
-  border-bottom: 1px solid #eee;
-  position: relative;
+.input-section {
+  margin-bottom: 30px;
 }
 
-.news-title {
-  font-size: 15px;
-  line-height: 1.4;
-  margin-bottom: 10px;
-  color: #333;
-  font-weight: 500;
-}
-
-.news-info {
+.input-group {
+  margin-bottom: 14px;
   display: flex;
-  gap: 8px;
-  font-size: 13px;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.news-source {
-  color: #666;
+.input-group label {
+  display: block;
+  color: #333;
+  font-weight: 600;
+  font-size: 18px;
+  margin-bottom: 6px;
 }
 
-.news-time {
-  color: #666;
-}
-
-.scrap-btn {
+.input-wrapper {
   position: relative;
-  bottom: 20px;
-  right: 20px;
-  background: #f5f5f5;
-  padding: 4px 12px;
-  border-radius: 4px;
-  font-size: 12px;
+  margin-bottom: 4px;
+  width: 200px;
+}
+
+.input-field {
+  width: 100%;
+  padding: 8px 40px 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 16px;
+  transition: all 0.2s ease;
+  height: 36px;
+  margin-top: 4px;
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: #0a362f;
+  box-shadow: 0 0 0 3px rgba(10, 54, 47, 0.1);
+}
+
+.unit {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
   color: #666;
+  font-size: 16px;
+}
+
+.button-group {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.quick-button {
+  padding: 8px 16px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background-color: #fff;
+  color: #333;
+  font-size: 14px;
   cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.scrap-btn:hover {
-  background: #e9ecef;
+.quick-button:hover {
+  background-color: #f5f5f5;
 }
 
-/* 스크롤바 스타일링 */
-.news-content::-webkit-scrollbar {
-  width: 6px;
+.quick-button:first-child {
+  background-color: #f8f9fa;
 }
 
-.news-content::-webkit-scrollbar-track {
-  background: #f1f1f1;
+.select-field {
+  width: 200px;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 15px;
+  color: #333;
+  background-color: #fff;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 8.825L1.175 4 2.238 2.938 6 6.7l3.763-3.762L10.825 4z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  transition: all 0.2s ease;
+  -webkit-appearance: none;
+  -moz-appearance: none;
 }
 
-.news-content::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 3px;
+.select-field:focus {
+  outline: none;
+  border-color: #0a362f;
+  box-shadow: 0 0 0 3px rgba(10, 54, 47, 0.1);
 }
 
-.news-content::-webkit-scrollbar-thumb:hover {
-  background: #555;
+.select-field::-moz-focus-inner {
+  border: 0;
+}
+
+.select-field::-ms-expand {
+  display: none;
+}
+
+.calculate-button {
+  width: 100%;
+  background: #0a362f;
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 20px;
+}
+
+.calculate-button:hover {
+  background: #0d4339;
+}
+
+.calculate-button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.result-section {
+  padding: 20px;
+}
+
+.calculation-result {
+  background-color: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+.calculation-result h3 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.result-content {
+  padding: 0 8px;
+}
+
+.result-content p {
+  font-size: 17px;
+  line-height: 1.6;
+  margin: 8px 0;
+  color: #333;
+}
+
+.result-content p:last-child {
+  font-size: 18px;
+  font-weight: 600;
+  color: #0a362f;
+  margin-top: 12px;
+}
+
+.loan-summary-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #ddd;
+}
+
+.loan-summary-table th,
+.loan-summary-table td {
+  padding: 10px;
+  border: 1px solid #ddd;
+}
+
+.loan-summary-table th {
+  background-color: #f5f5f5;
+  text-align: center;
+}
+
+.amount {
+  text-align: right;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .input-wrapper,
+  .select-field {
+    width: 100%;
+  }
+  
+  .button-group {
+    flex-wrap: wrap;
+  }
+  
+  .quick-button {
+    flex: 1;
+    min-width: calc(50% - 4px);
+  }
+}
+
+.divider {
+  border: none;
+  height: 1px;
+  background-color: #adb5bd;
+  margin: 12px 0;
 }
 </style>
+
+<script>
+export default {
+  name: "LoanView",
+  data() {
+    return {
+      loanAmount: '',
+      interestRate: '',
+      loanPeriod: '',
+      repaymentType: 'equal-principal-interest',
+      result: null,
+      monthlyPayment: null,
+      paymentSchedule: [],
+      annualSummary: []
+    };
+  },
+  computed: {
+    isValidInput() {
+      return this.loanAmount > 0 && this.loanPeriod > 0;
+    }
+  },
+  methods: {
+    calculateLoan() {
+      try {
+        const P = Number(this.loanAmount);
+        const years = Number(this.loanPeriod);
+        const annualRate = Number(this.interestRate);
+        const r = annualRate / 12 / 100;
+        const n = years * 12;
+
+        this.paymentSchedule = [];
+        
+        switch (this.repaymentType) {
+          case 'bullet':
+            this.calculateBulletPayment(P, r, n);
+            break;
+          case 'equal-principal':
+            this.calculateEqualPrincipal(P, r, n);
+            break;
+          default:
+            this.calculateEqualPrincipalInterest(P, r, n);
+        }
+
+        this.result = true;
+      } catch (error) {
+        console.error('Error:', error);
+        alert('계산 중 오류가 발생했습니다.');
+      }
+    },
+
+    calculateAnnualSummary() {
+      const annualSummary = [];
+      let remainingPrincipal = Number(this.loanAmount);
+
+      for (let year = 1; year <= this.loanPeriod; year++) {
+        let annualPayment = 0;
+        let annualPrincipal = 0;
+        let annualInterest = 0;
+
+        for (let month = 1; month <= 12; month++) {
+          const index = (year - 1) * 12 + month - 1;
+          if (index >= this.paymentSchedule.length) break;
+
+          const row = this.paymentSchedule[index];
+          annualPayment += row.payment;
+          annualPrincipal += row.principal;
+          annualInterest += row.interest;
+          remainingPrincipal = row.remainingPrincipal;
+        }
+
+        annualSummary.push({
+          year,
+          annualPayment: this.formatCurrency(annualPayment),
+          annualPrincipal: this.formatCurrency(annualPrincipal),
+          annualInterest: this.formatCurrency(annualInterest),
+          remainingPrincipal: this.formatCurrency(remainingPrincipal)
+        });
+      }
+
+      this.annualSummary = annualSummary;
+    },
+
+    calculateBulletPayment(P, r, n) {
+      const monthlyInterest = P * r;
+      const totalInterest = monthlyInterest * n;
+      
+      this.monthlyPayment = this.formatCurrency(monthlyInterest);
+      this.totalPayment = this.formatCurrency(P + totalInterest);
+      this.totalInterest = this.formatCurrency(totalInterest);
+      
+      // 매월 이자만 납부하는 스케줄 생성
+      for (let month = 1; month <= n; month++) {
+        this.paymentSchedule.push({
+          period: `${month}개차`,
+          payment: monthlyInterest,
+          principal: month === n ? P : 0, // 마지막 달에만 원금 상환
+          interest: monthlyInterest,
+          remainingPrincipal: month === n ? 0 : P
+        });
+      }
+    },
+
+    calculateEqualPrincipal(P, r, n) {
+      const monthlyPrincipal = P / n;
+      let remainingPrincipal = P;
+      let totalInterest = 0;
+      
+      // 첫 달의 납입금으로 초기값 설정
+      const initialMonthlyInterest = P * r;
+      this.monthlyPayment = this.formatCurrency(monthlyPrincipal + initialMonthlyInterest);
+      
+      for (let month = 1; month <= n; month++) {
+        const monthlyInterest = remainingPrincipal * r;
+        const monthlyPayment = monthlyPrincipal + monthlyInterest;
+        
+        totalInterest += monthlyInterest;
+        remainingPrincipal -= monthlyPrincipal;
+
+        this.paymentSchedule.push({
+          period: `${month}개월차`,
+          payment: monthlyPayment,
+          principal: monthlyPrincipal,
+          interest: monthlyInterest,
+          remainingPrincipal: Math.max(0, remainingPrincipal)
+        });
+      }
+      
+      this.totalPayment = this.formatCurrency(P + totalInterest);
+      this.totalInterest = this.formatCurrency(totalInterest);
+    },
+
+    calculateEqualPrincipalInterest(P, r, n) {
+      const monthlyPayment = P * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+      this.monthlyPayment = this.formatCurrency(monthlyPayment);
+      
+      let remainingPrincipal = P;
+      
+      for (let month = 1; month <= n; month++) {
+        const monthlyInterest = remainingPrincipal * r;
+        const monthlyPrincipal = monthlyPayment - monthlyInterest;
+        
+        remainingPrincipal -= monthlyPrincipal;
+
+        this.paymentSchedule.push({
+          period: `${month}개월차`,
+          payment: monthlyPayment,
+          principal: monthlyPrincipal,
+          interest: monthlyInterest,
+          remainingPrincipal: Math.max(0, remainingPrincipal)
+        });
+      }
+    },
+
+    getRepaymentTypeText() {
+      const types = {
+        'equal-principal-interest': '원리금균등상환',
+        'equal-principal': '원금균등상환',
+        'bullet': '만기일시상환'
+      };
+      return types[this.repaymentType] || '원리금균등상환';
+    },
+
+    formatCurrency(value) {
+      return new Intl.NumberFormat('ko-KR', {
+        style: 'decimal',
+        maximumFractionDigits: 0
+      }).format(Math.round(value));
+    },
+
+    adjustAmount(value) {
+      if (value === -1) {
+        this.loanAmount = '';
+        return;
+      }
+      const currentAmount = Number(this.loanAmount) || 0;
+      this.loanAmount = String(currentAmount + value);
+    },
+    
+    adjustRate(value) {
+      if (value === -1) {
+        this.interestRate = '';
+        return;
+      }
+      const currentRate = Number(this.interestRate) || 0;
+      this.interestRate = String(currentRate + value);
+    },
+    
+    adjustPeriod(value) {
+      if (value === -1) {
+        this.loanPeriod = '';
+        return;
+      }
+      const currentPeriod = Number(this.loanPeriod) || 0;
+      this.loanPeriod = String(currentPeriod + value);
+    }
+  }
+};
+</script>
