@@ -5,21 +5,19 @@
 </template>
 
 <script>
-import { toRaw } from "vue";
+// 전역 변수로 선언
+let map = null;
+let markers = [];
+let selectedMarker = null;
+let selectedInfowindow = null;
+let clusterer = null;
 
 export default {
   data() {
     return {
-      map: null,
-      markers: [],
-      selectedMarker: null,
-      selectedInfowindow: null,
-      clusterer: null,
-      markerQueue: [],
-      isProcessingMarkers: false,
-    };
+      map: null  // 컴포넌트 내부 상태로도 저장
+    }
   },
-
   mounted() {
     if (window?.kakaoMapsLoaded) {
       this.initMap();
@@ -36,21 +34,17 @@ export default {
       if (!container || !window?.kakao?.maps) return;
 
       try {
-        const rawKakao = toRaw(window.kakao);
-
-        this.map = new rawKakao.maps.Map(container, {
-          center: new rawKakao.maps.LatLng(37.5012743, 127.039585),
+        map = new kakao.maps.Map(container, {
+          center: new kakao.maps.LatLng(37.5012743, 127.039585),
           level: 3,
         });
+        this.map = map;  // 컴포넌트 상태에도 저장
 
-        this.clusterer = new rawKakao.maps.MarkerClusterer({
-          map: toRaw(this.map),
+        clusterer = new kakao.maps.MarkerClusterer({
+          map: map,
           averageCenter: true,
-          minLevel: 6,
-          gridSize: 80,
-          minClusterSize: 5,
-          disableClickZoom: false,
-          calculator: [10, 30, 50],
+          minLevel: 3,
+          gridSize: 60,
           styles: [
             {
               width: "50px",
@@ -65,108 +59,101 @@ export default {
             },
           ],
         });
-
-        let timeout;
-        kakao.maps.event.addListener(this.map, "dragend", () => {
-          if (timeout) clearTimeout(timeout);
-          timeout = setTimeout(() => {
-            this.processMarkerQueue();
-          }, 150);
-        });
       } catch (error) {
         console.error("카카오맵 초기화 중 오류:", error);
       }
     },
 
-    async processMarkerQueue() {
-      if (this.isProcessingMarkers || !this.markerQueue.length) return;
+    getMap() {
+      return map;
+    },
 
-      this.isProcessingMarkers = true;
-      const BATCH_SIZE = 100;
-
-      try {
-        while (this.markerQueue.length) {
-          const batch = this.markerQueue.splice(0, BATCH_SIZE);
-          if (this.clusterer) {
-            this.clusterer.addMarkers(batch);
-          }
-          await new Promise((resolve) => setTimeout(resolve, 10));
-        }
-      } finally {
-        this.isProcessingMarkers = false;
+    setMapOptions(level, lat, lng) {
+      if (map) {
+        map.setLevel(level);
+        map.setCenter(new kakao.maps.LatLng(lat, lng));
       }
     },
 
     showMarker(apt) {
-      if (!this.map || !apt || !apt.lat || !apt.lng) {
+      if (!map || !apt || !apt.lat || !apt.lng) {
         console.error("유효하지 않은 데이터:", apt);
         return;
       }
 
       try {
         const position = new kakao.maps.LatLng(apt.lat, apt.lng);
+        
+        if(selectedMarker) {
+          selectedMarker.setMap(null);
+        }
 
-        this.clearMarkers();
-
-        this.selectedMarker = new kakao.maps.Marker({
+        selectedMarker = new kakao.maps.Marker({
           position: position,
-          map: this.map,
+          map: map,
         });
 
         if (apt.title) {
-          this.selectedInfowindow = new kakao.maps.InfoWindow({
+          selectedInfowindow = new kakao.maps.InfoWindow({
             content: `<div style="padding:5px;font-size:12px;"><strong>${apt.title}</strong></div>`,
             removable: true,
           });
-          this.selectedInfowindow.open(this.map, this.selectedMarker);
+          selectedInfowindow.open(map, selectedMarker);
         }
 
-        this.map.setCenter(position);
-        this.map.setLevel(3);
+        map.setCenter(position);
+        map.setLevel(3);
       } catch (error) {
         console.error("마커 표시 중 오류 발생:", error);
       }
     },
 
     showMarkers(apartments) {
-      if (!this.map || !apartments?.length || !window?.kakao?.maps) return;
-
+      if (!map || !apartments?.length || !window?.kakao?.maps) {
+        console.log("조건 체크 실패", { map, apartmentsLength: apartments?.length });
+        return;
+      }
+      
       try {
         this.clearMarkers();
-        const cur = this.map.getCenter();
-        const rawKakao = toRaw(window.kakao);
+        const cur = map.getCenter();
 
-        this.markerQueue = apartments
-          .filter(
-            (apt) =>
-              apt?.latitude &&
-              apt?.longitude &&
-              apt?.aptName &&
-              Math.abs(cur.getLat() - apt.latitude) < 0.5 &&
-              Math.abs(cur.getLng() - apt.longitude) < 0.5
-          )
-          .map((apt) => {
-            const marker = new rawKakao.maps.Marker({
-              position: new rawKakao.maps.LatLng(apt.latitude, apt.longitude),
-            });
-            marker.aptData = { aptName: apt.aptName };
-            return marker;
-          })
-          .filter(Boolean);
+        // 필터링된 마커 확인
+        const filteredApts = apartments.filter(
+          (apt) =>
+            apt?.latitude &&
+            apt?.longitude &&
+            apt?.aptName &&
+            Math.abs(cur.getLat() - apt.latitude) < 0.5 &&
+            Math.abs(cur.getLng() - apt.longitude) < 0.5
+        );
 
-        this.markers = this.markerQueue.slice();
-        this.processMarkerQueue();
+        markers = filteredApts.map((apt) => {
+          const marker = new kakao.maps.Marker({
+            position: new kakao.maps.LatLng(apt.latitude, apt.longitude),
+          });
+          marker.aptData = { aptName: apt.aptName };
+          return marker;
+        });
+    
+        
+        if (markers.length > 0) {
+          clusterer.clear();
+          clusterer.addMarkers(markers);
+        }
       } catch (error) {
         console.error("마커 표시 중 오류:", error);
       }
     },
 
     clearMarkers() {
-      this.markerQueue = [];
-      if (this.clusterer) {
-        this.clusterer.clear();
+      if (clusterer) {
+        clusterer.clear();
       }
-      this.markers = [];
+      if (markers.length > 0) {
+        markers.forEach(marker => marker.setMap(null));
+      }
+      markers = [];
     },
   },
 };
