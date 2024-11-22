@@ -1,5 +1,6 @@
 <script>
 import { mapState, mapActions } from "vuex";
+import { houseApi } from "../api/house";
 
 export default {
   name: "RegionFilter",
@@ -31,8 +32,25 @@ export default {
       fetchDongList: "region/fetchDongList",
     }),
     async selectSido(sido) {
-      this.selectedSido = sido;
-      await this.fetchGugunList(sido.name);
+      try {
+        this.selectedSido = sido;
+        this.selectedGugun = null;
+        this.selectedDong = null;
+
+        await this.fetchGugunList(sido.name);
+
+        const response = await houseApi.searchByToggleWithSi(sido.code);
+        
+        const mapRef = this.$parent.$refs.map;
+        if (mapRef?.map) {
+          mapRef.map.setLevel(9);
+          mapRef.map.setCenter(new kakao.maps.LatLng(sido.latitude, sido.longitude));
+          mapRef.showMarkers(response.data);
+        }
+
+      } catch (error) {
+        console.error('시도 선택 중 오류 발생:', error);
+      }
     },
     async selectGugun(gugun) {
       this.selectedGugun = gugun;

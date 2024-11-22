@@ -22,8 +22,10 @@ export default {
       try {
         const response = await fetchSiNames();
         const formattedSidoList = response.data.map((si) => ({
-          code: si.siCode,
+          code: si.dongCode,
           name: si.siName,
+          latitude: si.latitude,
+          longitude: si.longitude,
         }));
         commit("setSidoList", formattedSidoList);
       } catch (error) {
@@ -34,8 +36,10 @@ export default {
       try {
         const response = await fetchGuNames(sido);
         const formattedGuList = response.data.map((gu) => ({
-          code: gu.guCode,
+          code: gu.dongCode,
           name: gu.guName,
+          latitude: gu.latitude,
+          longitude: gu.longitude,
         }));
         commit("setGugunList", formattedGuList);
       } catch (error) {
@@ -48,6 +52,8 @@ export default {
         const formattedDongList = response.data.map((dong) => ({
           code: dong.dongCode,
           name: dong.dongName,
+          latitude: dong.latitude,
+          longitude: dong.longitude,
         }));
         commit("setDongList", formattedDongList);
       } catch (error) {
