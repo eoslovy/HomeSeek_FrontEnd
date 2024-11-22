@@ -35,9 +35,6 @@
     <transition name="slide">
       <LoanView v-if="currentNav === 'loan'" @close="closeNav" />
     </transition>
-    <transition name="slide">
-      <AnalysisView v-if="currentNav === 'analysis'" @close="closeNav" />
-    </transition>
 
   <!-- 오른쪽 모달 -->
   <transition name="slide-right">
@@ -158,7 +155,6 @@ import NavigationBar from "@/components/navbar/NavigationBar.vue";
 import NewsView from "@/components/navbar/NewsView.vue";
 import PolicyView from "@/components/navbar/PolicyView.vue";
 import LoanView from "@/components/navbar/LoanView.vue";
-import AnalysisView from "@/components/navbar/AnalysisView.vue";
 import axios from 'axios';
 
 ChartJS.register(
@@ -182,7 +178,6 @@ export default {
     NewsView,
     PolicyView,
     LoanView,
-    AnalysisView,
     Line
   },
   data() {

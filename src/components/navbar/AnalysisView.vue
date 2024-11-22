@@ -1,172 +1,218 @@
 <template>
-  <div class="news-view">
-    <div class="news-header">
-      <div class="header-content">
-        <span class="back-icon" @click="$emit('close')">←</span>
-        <span class="header-title">1대1 뜨실?</span>
-      </div>
-    </div>
-    <div class="news-content">
-      <div class="news-list">
-        <div v-for="(news, index) in newsList" :key="index" class="news-item">
-          <div class="news-title">{{ news.title }}</div>
-          <div class="news-info">
-            <span class="news-source">{{ news.source }}</span>
-            <span class="news-time">{{ news.time }}</span>
+  <transition name="fade">
+    <div v-if="show" class="modal-overlay" @click="$emit('close')">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <div class="header-left">
+            <i class="bi bi-arrow-left" @click="$emit('close')"></i>
+            <h3>지역 비교 분석</h3>
           </div>
-          <div class="scrap-btn">스크랩</div>
+        </div>
+        <div class="modal-body">
+          <div class="map-container">
+            <div class="map-section">
+              <div class="map-header">
+                <h3>강남구</h3>
+              </div>
+              <div id="map1" ref="map1" class="map"></div>
+            </div>
+            <div class="map-section">
+              <div class="map-header">
+                <h3>송파구</h3>
+              </div>
+              <div id="map2" ref="map2" class="map"></div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
+  </transition>
 </template>
 
 <script>
 export default {
-  name: "NewsView",
+  name: "AnalysisView",
+  props: {
+    show: {
+      type: Boolean,
+      required: true
+    }
+  },
   data() {
     return {
-      newsList: [
-        {
-          title:
-            '"노도강 천지개벽 쌀줄만 알까" 1만 가구 미니신도시 만든다는 이 동네',
-          source: "매일경제",
-          time: "4시간 전",
-        },
-        {
-          title:
-            '"한 달 뒤면 서울까지 20분" 환호 직주인들 신난 동네 [집코노미-접접쪽쪽]',
-          source: "한국경제",
-          time: "5시간 전",
-        },
-        {
-          title: '"돈 많아도 현남동 안산다" 김구라 신흥촌은 어디',
-          source: "머니투데이",
-          time: "6시간 전",
-        },
-        {
-          title:
-            '"신흥촌, 30평보다 10평이 더 좋다고.." OO 떠났야 돈 번다[부릿지]',
-          source: "머니투데이",
-          time: "7시간 전",
-        },
-      ],
+      map1: null,
+      map2: null,
     };
   },
+  watch: {
+    show: {
+      handler(newVal) {
+        if (newVal) {
+          this.$nextTick(() => {
+            setTimeout(() => {
+              this.initializeKakaoMaps();
+            }, 100);
+          });
+        }
+      },
+      immediate: true
+    }
+  },
+  methods: {
+    initializeKakaoMaps() {
+      if (!window.kakao || !window.kakao.maps) {
+        console.error('Kakao maps SDK not loaded');
+        return;
+      }
+
+      try {
+        const mapContainer1 = this.$refs.map1;
+        const mapContainer2 = this.$refs.map2;
+
+        if (!mapContainer1 || !mapContainer2) {
+          console.error('Map containers not found');
+          return;
+        }
+
+        const mapOption1 = {
+          center: new kakao.maps.LatLng(37.4959854, 127.0664091),
+          level: 5,
+        };
+        const mapOption2 = {
+          center: new kakao.maps.LatLng(37.5145937, 127.1059186),
+          level: 5,
+        };
+
+        this.map1 = new kakao.maps.Map(mapContainer1, mapOption1);
+        this.map2 = new kakao.maps.Map(mapContainer2, mapOption2);
+
+        window.dispatchEvent(new Event('resize'));
+        
+        setTimeout(() => {
+          this.map1.relayout();
+          this.map2.relayout();
+        }, 50);
+
+      } catch (error) {
+        console.error('Error initializing maps:', error);
+      }
+    }
+  },
+  unmounted() {
+    this.map1 = null;
+    this.map2 = null;
+  }
 };
 </script>
 
 <style scoped>
-.news-view {
-  position: absolute;
-  top: 70px;
-  left: 0;
-  width: 450px;
-  height: calc(100vh - 70px);
-  background: white;
-  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
-}
-
-.news-header {
-  position: sticky;
+.modal-overlay {
+  position: fixed;
   top: 0;
-  background: #0a362f;
-  color: white;
-  padding: 15px;
-  height: 56px;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
-  align-items: center;
-  z-index: 1001;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 70px;
+  z-index: 9999;
 }
 
-.header-content {
+.modal-content {
+  background: rgba(33, 37, 41, 0.95);
+  width: 98vw;
+  height: 90vh;
+  margin: 0;
+  border-radius: 8px;
+  border: 1px solid #D4AF37;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  padding: 15px 20px;
+  border-bottom: 1px solid #D4AF37;
+  background: #0a362f;
+}
+
+.header-left {
   display: flex;
   align-items: center;
   gap: 15px;
 }
 
-.back-icon {
-  font-size: 20px;
+.header-left i {
+  color: #D4AF37;
   cursor: pointer;
-  padding: 8px;
+  font-size: 1.2rem;
 }
 
-.header-title {
-  font-size: 16px;
-  font-weight: 500;
+.header-left h3 {
+  color: #D4AF37;
+  margin: 0;
+  font-size: 1.2rem;
 }
 
-.news-content {
-  height: calc(100vh - 126px);
-  overflow-y: auto;
+.modal-body {
+  flex: 1;
+  overflow: hidden;
+  padding: 15px;
 }
 
-.news-list {
-  padding: 0;
-}
-
-.news-item {
-  padding: 20px;
-  border-bottom: 1px solid #eee;
-  position: relative;
-}
-
-.news-title {
-  font-size: 15px;
-  line-height: 1.4;
-  margin-bottom: 10px;
-  color: #333;
-  font-weight: 500;
-}
-
-.news-info {
+.map-container {
   display: flex;
-  gap: 8px;
-  font-size: 13px;
+  gap: 15px;
+  height: 100%;
 }
 
-.news-source {
+.map-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.map-header {
+  padding: 12px 15px;
+  border-bottom: 1px solid #eee;
+}
+
+.map-header h3 {
+  margin: 0;
+  margin-bottom: 10px;
+  font-size: 18px;
+  color: #333;
+}
+
+.stats {
+  display: flex;
+  gap: 15px;
+}
+
+.stat-item {
+  font-size: 14px;
   color: #666;
 }
 
-.news-time {
-  color: #666;
+.map {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  border-radius: 0 0 8px 8px;
 }
 
-.scrap-btn {
-  position: absolute;
-  bottom: 20px;
-  right: 20px;
-  background: #f5f5f5;
-  padding: 4px 12px;
-  border-radius: 4px;
-  font-size: 12px;
-  color: #666;
-  cursor: pointer;
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
 }
 
-.scrap-btn:hover {
-  background: #e9ecef;
-}
-
-/* 스크롤바 스타일링 */
-.news-content::-webkit-scrollbar {
-  width: 6px;
-}
-
-.news-content::-webkit-scrollbar-track {
-  background: #f1f1f1;
-}
-
-.news-content::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 3px;
-}
-
-.news-content::-webkit-scrollbar-thumb:hover {
-  background: #555;
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>

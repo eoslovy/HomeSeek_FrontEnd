@@ -1,132 +1,126 @@
 <template>
-  <div class="modal-overlay" @click.self="$emit('close')">
-    <div class="modal-container">
-      <div class="modal-header">
-        <span class="header-title">대출 계산기</span>
-        <span class="close-button" @click="$emit('close')">×</span>
-      </div>
-      
+  <transition name="fade">
+    <div v-if="show" class="modal-overlay" @click.self="$emit('close')">
       <div class="modal-content">
-        <div class="loan-view">
-          <div class="loan-header">
-            <div class="header-content">
-              <span class="back-icon" @click="$emit('close')">←</span>
-              <span class="header-title">대출 계산기</span>
-            </div>
+        <div class="modal-header">
+          <div class="header-left">
+            <i class="bi bi-arrow-left" @click="$emit('close')"></i>
+            <h3>대출 계산기</h3>
           </div>
-          <div class="loan-content">
-            <div class="input-section">
-              <div class="input-group">
-                <label>대출 금액</label>
-                <div class="input-wrapper">
-                  <input 
-                    type="text" 
-                    v-model="loanAmount"
-                    placeholder="0"
-                    class="input-field"
-                  >
-                  <span class="unit">원</span>
-                </div>
-                <div class="button-group">
-                  <button class="quick-button" @click="adjustAmount(-1)">초기화</button>
-                  <button class="quick-button" @click="adjustAmount(1000000)">+100만</button>
-                  <button class="quick-button" @click="adjustAmount(10000000)">+1000만</button>
-                  <button class="quick-button" @click="adjustAmount(100000000)">+1억</button>
-                </div>
+        </div>
+        
+        <div class="modal-body">
+          <div class="input-section">
+            <div class="input-group">
+              <label>대출 금액</label>
+              <div class="input-wrapper">
+                <input 
+                  type="text" 
+                  v-model="loanAmount"
+                  placeholder="0"
+                  class="input-field"
+                >
+                <span class="unit">원</span>
               </div>
-              
-              <hr class="divider">
-              
-              <div class="input-group">
-                <label>연 이자율</label>
-                <div class="input-wrapper">
-                  <input 
-                    type="text" 
-                    v-model="interestRate"
-                    placeholder="0"
-                    class="input-field"
-                  >
-                  <span class="unit">%</span>
-                </div>
-                <div class="button-group">
-                  <button class="quick-button" @click="adjustRate(-1)">초기화</button>
-                  <button class="quick-button" @click="adjustRate(1)">+1%</button>
-                  <button class="quick-button" @click="adjustRate(2)">+2%</button>
-                  <button class="quick-button" @click="adjustRate(5)">+5%</button>
-                </div>
+              <div class="button-group">
+                <button class="quick-button" @click="adjustAmount(-1)">초기화</button>
+                <button class="quick-button" @click="adjustAmount(1000000)">+100만</button>
+                <button class="quick-button" @click="adjustAmount(10000000)">+1000만</button>
+                <button class="quick-button" @click="adjustAmount(100000000)">+1억</button>
               </div>
-              
-              <hr class="divider">
-              
-              <div class="input-group">
-                <label>상환기간</label>
-                <div class="input-wrapper">
-                  <input 
-                    type="text" 
-                    v-model="loanPeriod"
-                    placeholder="0"
-                    class="input-field"
-                  >
-                  <span class="unit">년</span>
-                </div>
-                <div class="button-group">
-                  <button class="quick-button" @click="adjustPeriod(-1)">초기화</button>
-                  <button class="quick-button" @click="adjustPeriod(1)">1년</button>
-                  <button class="quick-button" @click="adjustPeriod(2)">2년</button>
-                  <button class="quick-button" @click="adjustPeriod(5)">5년</button>
-                </div>
+            </div>
+            
+            <hr class="divider">
+            
+            <div class="input-group">
+              <label>연 이자율</label>
+              <div class="input-wrapper">
+                <input 
+                  type="text" 
+                  v-model="interestRate"
+                  placeholder="0"
+                  class="input-field"
+                >
+                <span class="unit">%</span>
               </div>
-              
-              <hr class="divider">
-              
-              <div class="input-group">
-                <label>상환방식</label>
-                <select v-model="repaymentType" class="select-field">
-                  <option value="equal-principal-interest">원리금균등상환</option>
-                  <option value="equal-principal">원금균등상환</option>
-                  <option value="bullet">만기일시상환</option>
-                </select>
+              <div class="button-group">
+                <button class="quick-button" @click="adjustRate(-1)">초기화</button>
+                <button class="quick-button" @click="adjustRate(1)">+1%</button>
+                <button class="quick-button" @click="adjustRate(2)">+2%</button>
+                <button class="quick-button" @click="adjustRate(5)">+5%</button>
               </div>
-
-              <button class="calculate-button" @click="calculateLoan">
-                계산하기
-              </button>
+            </div>
+            
+            <hr class="divider">
+            
+            <div class="input-group">
+              <label>상환기간</label>
+              <div class="input-wrapper">
+                <input 
+                  type="text" 
+                  v-model="loanPeriod"
+                  placeholder="0"
+                  class="input-field"
+                >
+                <span class="unit">년</span>
+              </div>
+              <div class="button-group">
+                <button class="quick-button" @click="adjustPeriod(-1)">초기화</button>
+                <button class="quick-button" @click="adjustPeriod(1)">1년</button>
+                <button class="quick-button" @click="adjustPeriod(2)">2년</button>
+                <button class="quick-button" @click="adjustPeriod(5)">5년</button>
+              </div>
+            </div>
+            
+            <hr class="divider">
+            
+            <div class="input-group">
+              <label>상환방식</label>
+              <select v-model="repaymentType" class="select-field">
+                <option value="equal-principal-interest">원리금균등상환</option>
+                <option value="equal-principal">원금균등상환</option>
+                <option value="bullet">만기일시상환</option>
+              </select>
             </div>
 
-            <div v-if="result" class="result-section">
-              <div class="calculation-result">
-                <h3>계산 결과</h3>
-                <div class="result-content">
-                  <p>{{ formatCurrency(loanAmount) }}원을 {{ loanPeriod }}년 동안</p>
-                  <p>{{ getRepaymentTypeText() }}으로 대출을 받았을때</p>
-                  <p>{{ interestRate }}% 기준 매월 {{ monthlyPayment }}원을 갚아야 합니다</p>
-                </div>
-              </div>
+            <button class="calculate-button" @click="calculateLoan">
+              계산하기
+            </button>
+          </div>
 
-              <table class="loan-summary-table">
-                <thead>
-                  <tr>
-                    <th>회차</th>
-                    <th>이자</th>
-                    <th>원금</th>
-                    <th>납입금액</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="(row, index) in paymentSchedule" :key="index">
-                    <td>{{ row.period }}</td>
-                    <td class="amount">{{ formatCurrency(row.interest) }}</td>
-                    <td class="amount">{{ formatCurrency(row.principal) }}</td>
-                    <td class="amount">{{ formatCurrency(row.payment) }}</td>
-                  </tr>
-                </tbody>
-              </table>
+          <div v-if="result" class="result-section">
+            <div class="calculation-result">
+              <h3>계산 결과</h3>
+              <div class="result-content">
+                <p>{{ formatCurrency(loanAmount) }}원을 {{ loanPeriod }}년 동안</p>
+                <p>{{ getRepaymentTypeText() }}으로 대출을 받았을때</p>
+                <p>{{ interestRate }}% 기준 매월 {{ monthlyPayment }}원을 갚아야 합니다</p>
+              </div>
             </div>
+
+            <table class="loan-summary-table">
+              <thead>
+                <tr>
+                  <th>회차</th>
+                  <th>이자</th>
+                  <th>원금</th>
+                  <th>납입금액</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(row, index) in paymentSchedule" :key="index">
+                  <td>{{ row.period }}</td>
+                  <td class="amount">{{ formatCurrency(row.interest) }}</td>
+                  <td class="amount">{{ formatCurrency(row.principal) }}</td>
+                  <td class="amount">{{ formatCurrency(row.payment) }}</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
     </div>
-  </div>
+  </transition>
 </template>
 
 <style scoped>
@@ -140,63 +134,50 @@
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  z-index: 1000;
-  padding-top: 80px;
+  padding-top: 70px;
+  z-index: 9999;
 }
 
-.modal-container {
-  background: white;
-  width: 90%;
-  max-width: 600px;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+.modal-content {
+  background: rgba(33, 37, 41, 0.95);
+  width: 600px;
+  border-radius: 8px;
+  border: 1px solid #D4AF37;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
 }
 
 .modal-header {
-  padding: 20px;
+  padding: 15px 20px;
+  border-bottom: 1px solid #D4AF37;
   background: #0a362f;
-  color: white;
-  border-radius: 12px 12px 0 0;
+}
+
+.header-left {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 15px;
 }
 
-.header-title {
-  font-size: 18px;
-  font-weight: 500;
-}
-
-.close-button {
-  font-size: 24px;
+.header-left i {
+  color: #D4AF37;
   cursor: pointer;
-  padding: 0 8px;
+  font-size: 1.2rem;
 }
 
-.modal-content {
+.header-left h3 {
+  color: #D4AF37;
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.modal-body {
+  background: white;
   padding: 24px;
   overflow-y: auto;
   max-height: calc(90vh - 70px);
-}
-
-.loan-view {
-  position: relative;
-  width: 100%;
-  height: auto;
-  background: transparent;
-  box-shadow: none;
-}
-
-.loan-header {
-  display: none;
-}
-
-.loan-content {
-  height: auto;
-  padding: 0;
+  border-radius: 0 0 8px 8px;
 }
 
 .input-section {
@@ -237,8 +218,8 @@
 
 .input-field:focus {
   outline: none;
-  border-color: #0a362f;
-  box-shadow: 0 0 0 3px rgba(10, 54, 47, 0.1);
+  border-color: #ddd;
+  box-shadow: none;
 }
 
 .unit {
@@ -296,8 +277,8 @@
 
 .select-field:focus {
   outline: none;
-  border-color: #0a362f;
-  box-shadow: 0 0 0 3px rgba(10, 54, 47, 0.1);
+  border-color: #ddd;
+  box-shadow: none;
 }
 
 .select-field::-moz-focus-inner {
@@ -413,11 +394,40 @@
   background-color: #adb5bd;
   margin: 12px 0;
 }
+
+/* 페이드 인 애니메이션 추가 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 페이드 트랜지션 */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
 </style>
 
 <script>
 export default {
   name: "LoanView",
+  props: {
+    show: {
+      type: Boolean,
+      required: true
+    }
+  },
   data() {
     return {
       loanAmount: '',
