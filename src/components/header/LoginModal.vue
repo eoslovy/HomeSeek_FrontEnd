@@ -2,50 +2,152 @@
   <div v-if="show" class="modal-overlay" @click.self="$emit('close')">
     <div class="modal-content">
       <div class="modal-header">
-        <h2>로그인</h2>
+        <h2>{{ isLogin ? '로그인' : '회원가입' }}</h2>
         <button class="close-btn" @click="$emit('close')"></button>
       </div>
 
-      <div class="login-options">
-        <button class="login-btn ho-login">
-          <i class="bi bi-house-door"></i>
-          SIU 앱으로 로그인
-        </button>
-
-        <button class="login-btn kakao-login">
-          <i class="bi bi-chat-fill"></i>
-          카카오 계정으로 로그인
+      <div v-if="isLoggedIn" class="logged-in-content">
+        <p>{{ userId }}님 환영합니다</p>
+        <button @click="handleLogout" class="logout-btn">
+          로그아웃
         </button>
       </div>
 
-      <div class="other-login-text">다른 방법으로 로그인</div>
+      <div v-else>
+        <div v-if="isLogin" class="login-options">
+          <form @submit.prevent="handleHoLogin">
+            <input 
+              type="text" 
+              v-model="loginForm.userId" 
+              placeholder="아이디"
+              required
+            />
+            <input 
+              type="password" 
+              v-model.trim="loginForm.pw" 
+              placeholder="비밀번호"
+              required
+            />
+            <button type="submit" class="login-btn ho-login">
+              로그인
+            </button>
+          </form>
+        </div>
 
-      <div class="social-login">
-        <button class="social-btn facebook">
-          <i class="bi bi-facebook"></i>
-          <span>페이스북</span>
-        </button>
-        <button class="social-btn apple">
-          <i class="bi bi-apple"></i>
-          <span>애플</span>
-        </button>
-        <button class="social-btn phone">
-          <i class="bi bi-phone"></i>
-          <span>휴대전화</span>
-        </button>
-      </div>
+        <div v-else class="signup-form">
+          <form @submit.prevent="handleSignup">
+            <div class="form-group">
+              <input 
+                type="text" 
+                v-model.trim="signupForm.userId" 
+                placeholder="아이디"
+                required
+                @blur="checkDuplicateId"
+              />
+              <span class="validation-message" :class="{ 'error': !isIdAvailable, 'success': isIdAvailable && signupForm.userId }">
+                {{ idValidationMessage }}
+              </span>
+            </div>
 
-      <div class="signup-link">
-        아직 회원이 아니신가요?
-        <a href="#" @click.prevent="handleSignup">회원 가입</a>
+            <div class="form-group">
+              <input 
+                type="password" 
+                v-model="signupForm.pw" 
+                placeholder="비밀번호"
+                required
+                @input="validatePassword"
+              />
+              <span class="validation-message" :class="{ 'error': !isPasswordValid && signupForm.pw }">
+                {{ passwordValidationMessage }}
+              </span>
+            </div>
+
+            <div class="form-group">
+              <input 
+                type="password" 
+                v-model="signupForm.confirmPw" 
+                placeholder="비밀번호 확인"
+                required
+                @input="validatePasswordMatch"
+              />
+              <span class="validation-message" :class="{ 'error': !isPasswordMatch && signupForm.confirmPw }">
+                {{ passwordMatchMessage }}
+              </span>
+            </div>
+
+            <div class="form-group">
+              <input 
+                type="text" 
+                v-model.trim="signupForm.nickname" 
+                placeholder="닉네임"
+                required
+              />
+            </div>
+
+            <button 
+              type="submit" 
+              class="signup-btn"
+              :disabled="!isFormValid"
+            >
+              가입하기
+            </button>
+          </form>
+        </div>
+
+        <div class="toggle-form">
+          {{ isLogin ? '아직 회원이 아니신가요?' : '이미 회원이신가요?' }}
+          <a href="#" @click.prevent="toggleForm">
+            {{ isLogin ? '회원가입' : '로그인' }}
+          </a>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script>
+import Swal from 'sweetalert2'
+
 export default {
   name: "LoginModal",
+  data() {
+    return {
+      isLogin: true,
+      loginForm: {
+        userId: '',
+        pw: ''
+      },
+      signupForm: {
+        userId: '',
+        pw: '',
+        confirmPw: '',
+        nickname: ''
+      },
+      isLoggedIn: false,
+      userId: '',
+      isIdAvailable: false,
+      isPasswordValid: false,
+      isPasswordMatch: false,
+      idValidationMessage: '',
+      passwordValidationMessage: '8~20자의 영문, 숫자, 특수문자를 포함해주세요',
+      passwordMatchMessage: ''
+    }
+  },
+  computed: {
+    isFormValid() {
+      return this.isIdAvailable && 
+             this.isPasswordValid && 
+             this.isPasswordMatch && 
+             this.signupForm.nickname.length > 0;
+    }
+  },
+  created() {
+    const savedUserId = localStorage.getItem('userId');
+    if (savedUserId) {
+      this.isLoggedIn = true;
+      this.userId = savedUserId;
+    }
+  },
   props: {
     show: {
       type: Boolean,
@@ -53,10 +155,175 @@ export default {
     },
   },
   methods: {
-    handleSignup() {
-      this.$router.push("/signup");
+    toggleForm() {
+      this.isLogin = !this.isLogin;
+      this.loginForm = { userId: '', pw: '' };
+      this.signupForm = { userId: '', pw: '', confirmPw: '', nickname: '' };
     },
-  },
+    async handleHoLogin() {
+      try {
+        const loginData = {
+          userId: this.loginForm.userId,
+          pw: this.loginForm.pw
+        };
+
+        const response = await fetch('http://localhost:8080/users/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(loginData)
+        });
+
+        const data = await response.json();
+        
+        if (response.ok) {
+          localStorage.setItem('userId', loginData.userId);
+          this.isLoggedIn = true;
+          this.userId = loginData.userId;
+          
+          this.$store.commit('setUser', data);
+          this.$emit('close');
+          this.$router.push('/');
+
+          Swal.fire({
+            icon: 'success',
+            title: '로그인 성공!',
+            text: `${loginData.userId}님 환영합니다`,
+            showConfirmButton: false,
+            timer: 1500,
+            position: 'top-end',
+            toast: true
+          });
+        } else {
+          throw new Error(data.message || '로그인에 실패했습니다');
+        }
+      } catch (error) {
+        console.error('로그인 에러:', error);
+        Swal.fire({
+          icon: 'error',
+          title: '로그인 실패',
+          text: '아이디 또는 비밀번호를 확인해주세요',
+          confirmButtonText: '확인',
+          confirmButtonColor: '#dc3545'
+        });
+      }
+    },
+
+    async handleLogout() {
+      try {
+        const result = await Swal.fire({
+          title: '로그아웃',
+          text: '정말 로그아웃 하시겠습니까?',
+          icon: 'question',
+          showCancelButton: true,
+          confirmButtonText: '로그아웃',
+          cancelButtonText: '취소',
+          confirmButtonColor: '#dc3545',
+          cancelButtonColor: '#6c757d'
+        });
+
+        if (result.isConfirmed) {
+          localStorage.removeItem('userId');
+          this.isLoggedIn = false;
+          this.userId = '';
+          this.$store.commit('setUser', null);
+          this.$emit('close');
+
+          Swal.fire({
+            icon: 'success',
+            title: '로그아웃 되었습니다',
+            showConfirmButton: false,
+            timer: 1500,
+            position: 'top-end',
+            toast: true
+          });
+        }
+      } catch (error) {
+        console.error('로그아웃 에러:', error);
+        Swal.fire({
+          icon: 'error',
+          title: '로그아웃 실패',
+          text: '다시 시도해주세요',
+          confirmButtonText: '확인',
+          confirmButtonColor: '#dc3545'
+        });
+      }
+    },
+
+    async checkDuplicateId() {
+      if (!this.signupForm.userId) {
+        this.idValidationMessage = '아이디를 입력해주세요';
+        this.isIdAvailable = false;
+        return;
+      }
+
+      try {
+        const response = await fetch(`http://localhost:8080/users/check-id/${this.signupForm.userId}`);
+        const data = await response.json();
+
+        if (response.ok) {
+          this.isIdAvailable = data.available;
+          this.idValidationMessage = data.available ? '사용 가능한 아이디입니다' : '이미 사용중인 아이디입니다';
+        }
+      } catch (error) {
+        console.error('ID 중복 체크 에러:', error);
+        this.idValidationMessage = '서버 오류가 발생했습니다';
+        this.isIdAvailable = false;
+      }
+    },
+
+    validatePassword() {
+      const pwRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,20}$/;
+      this.isPasswordValid = pwRegex.test(this.signupForm.pw);
+      this.validatePasswordMatch();
+    },
+
+    validatePasswordMatch() {
+      this.isPasswordMatch = this.signupForm.pw === this.signupForm.confirmPw;
+      this.passwordMatchMessage = this.signupForm.confirmPw ? 
+        (this.isPasswordMatch ? '비밀번호가 일치합니다' : '비밀번호가 일치하지 않습니다') : '';
+    },
+
+    async handleSignup() {
+      try {
+        const response = await fetch('http://localhost:8080/users/signup', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId: this.signupForm.userId,
+            pw: this.signupForm.pw,
+            nickname: this.signupForm.nickname
+          })
+        });
+
+        if (response.ok) {
+          Swal.fire({
+            icon: 'success',
+            title: '회원가입 성공!',
+            text: '로그인해주세요.',
+            showConfirmButton: false,
+            timer: 1500
+          });
+          this.isLogin = true;
+        } else {
+          const data = await response.json();
+          throw new Error(data.message || '회원가입에 실패했습니다');
+        }
+      } catch (error) {
+        console.error('회원가입 에러:', error);
+        Swal.fire({
+          icon: 'error',
+          title: '회원가입 실패',
+          text: error.message || '다시 시도해주세요',
+          confirmButtonText: '확인',
+          confirmButtonColor: '#dc3545'
+        });
+      }
+    }
+  }
 };
 </script>
 
@@ -212,5 +479,97 @@ export default {
 
 .signup-link a:hover {
   text-decoration: underline;
+}
+
+form {
+  width: 100%;
+}
+
+input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+input:focus {
+  outline: none;
+  border-color: #1e40af;
+}
+
+.logged-in-content {
+  text-align: center;
+  padding: 20px;
+}
+
+.logout-btn {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 15px;
+}
+
+.logout-btn:hover {
+  background: #c82333;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.validation-message {
+  display: block;
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+.error {
+  color: #dc3545;
+}
+
+.success {
+  color: #28a745;
+}
+
+.toggle-form {
+  text-align: center;
+  margin-top: 20px;
+  color: #666;
+}
+
+.toggle-form a {
+  color: #4a90e2;
+  text-decoration: none;
+  margin-left: 5px;
+}
+
+.toggle-form a:hover {
+  text-decoration: underline;
+}
+
+.signup-btn {
+  width: 100%;
+  padding: 12px;
+  background: #4a90e2;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.signup-btn:hover {
+  background: #357abd;
+}
+
+.signup-btn:disabled {
+  background: #cccccc;
+  cursor: not-allowed;
 }
 </style>

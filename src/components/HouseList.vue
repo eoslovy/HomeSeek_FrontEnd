@@ -45,11 +45,14 @@ export default {
         title: house.aptName,
       });
 
-      this.$emit('select-house', {
+      const dealInfo = {
         aptName: house.aptName,
         si: house.sidoName,
         gu: house.gugunName
-      });
+      };
+      
+      console.log('전송할 dealInfo:', dealInfo);
+      this.$emit('select-house', dealInfo);
     },
     getAddress(house) {
       return `${house.sidoName} ${house.gugunName} ${house.dongName}`;

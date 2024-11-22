@@ -156,6 +156,7 @@ import NewsView from "@/components/navbar/NewsView.vue";
 import PolicyView from "@/components/navbar/PolicyView.vue";
 import LoanView from "@/components/navbar/LoanView.vue";
 import axios from 'axios';
+import Swal from 'sweetalert2';
 
 ChartJS.register(
   CategoryScale,
@@ -340,25 +341,43 @@ export default {
       }
     },
     async getAIAdvice() {
-      this.isLoading = true;
-      this.showAIModal = true;
+      Swal.fire({
+        title: 'AI 분석 중...',
+        html: '심리지수, 실거래가 추이, 매물을 활용하여<br>종합적으로 분석하고 있습니다.',
+        showConfirmButton: false,
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+          const spinner = document.querySelector('.swal2-loading');
+          if (spinner) {
+            spinner.firstChild.classList.add('custom-loading-spinner');
+          }
+        }
+      });
       
       const requestData = {
         aptName: this.selectedHouse.aptName,
         si: this.selectedHouse.si,
         gu: this.selectedHouse.gu
       };
-      console.log('요청 데이터:', requestData);
 
       try {
         const response = await axios.post('/openai/advice', requestData);
-        console.log('AI 응답:', response.data);
+        
+        Swal.close();
         this.aiAdvice = response.data;
+        this.showAIModal = true;
+
       } catch (error) {
         console.error('AI 추천 조회 실패:', error.response || error);
-        this.aiAdvice = '죄송합니다. 현재 AI 분석을 제공할 수 없습니다.';
-      } finally {
-        this.isLoading = false;
+        
+        Swal.fire({
+          icon: 'error',
+          title: 'AI 분석 실패',
+          text: '죄송합니다. 현재 AI 분석을 제공할 수 없습니다.',
+          confirmButtonText: '확인',
+          confirmButtonColor: '#dc3545'
+        });
       }
     },
     closeAIModal() {
@@ -669,5 +688,55 @@ export default {
   text-align: center;
   font-size: 16px;
   color: #666;
+}
+
+/* 로딩 스피너 커스텀 스타일 */
+.custom-loading-spinner {
+  width: 180px !important;
+  height: 180px !important;
+  border: 4px solid transparent !important;
+  border-top: 4px solid #4a90e2 !important;
+  border-right: 4px solid #4a90e2 !important;
+  border-radius: 50% !important;
+  animation: halfSpin 1s ease-in-out infinite !important;
+  margin: 30px auto !important;
+}
+
+@keyframes halfSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* SweetAlert2 커스텀 스타일 */
+.swal2-popup {
+  font-size: 1.1em !important;
+  padding: 3em !important;
+  width: 32em !important;
+  max-width: 90vw !important;
+}
+
+.swal2-title {
+  color: #333 !important;
+  font-size: 2em !important;
+  margin-bottom: 1em !important;
+}
+
+.swal2-html-container {
+  font-size: 1.3em !important;
+  color: #666 !important;
+  line-height: 1.8 !important;
+  margin-top: 1em !important;
+  padding: 0 1em !important;
+}
+
+/* 로딩 컨테이너의 배경색 제거 */
+.swal2-loading {
+  background: transparent !important;
+}
+
+/* 로딩 컨테이너 크기 조정 */
+.swal2-loader {
+  width: 180px !important;
+  height: 180px !important;
 }
 </style>
