@@ -36,30 +36,39 @@ export default {
         this.selectedSido = sido;
         this.selectedGugun = null;
         this.selectedDong = null;
-
         await this.fetchGugunList(sido.name);
 
         const response = await houseApi.searchByToggleWithSi(sido.code);
-        
+          
         const mapRef = this.$parent.$refs.map;
-        if (mapRef?.map) {
-          mapRef.map.setLevel(9);
-          mapRef.map.setCenter(new kakao.maps.LatLng(sido.latitude, sido.longitude));
+        if (mapRef) {
+          mapRef.setMapOptions(9, sido.latitude, sido.longitude);
           mapRef.showMarkers(response.data);
         }
-
       } catch (error) {
         console.error('시도 선택 중 오류 발생:', error);
       }
     },
     async selectGugun(gugun) {
-      this.selectedGugun = gugun;
-      await this.fetchDongList({
-        si: this.selectedSido.name,
-        gu: gugun.name,
-      });
+      try {
+        this.selectedGugun = gugun;
+        await this.fetchDongList({
+          si: this.selectedSido.name,
+          gu: gugun.name,
+        });
+
+        const response = await houseApi.searchByToggleWithGu(gugun.code);
+          
+        const mapRef = this.$parent.$refs.map;
+        if (mapRef) {
+          mapRef.setMapOptions(6, gugun.latitude, gugun.longitude);
+          mapRef.showMarkers(response.data);
+        }
+      } catch (error) {
+        console.error('구/군 선택 중 오류:', error);
+      }
     },
-    selectDong(dong) {
+    async selectDong(dong) {
       this.selectedDong = dong;
       this.$store.commit("region/setDongList", []);
       this.$emit("select-region", {
@@ -67,6 +76,14 @@ export default {
         gugun: this.selectedGugun,
         dong: dong
       });
+
+      const response = await houseApi.searchByToggleWithDong(dong.code);
+          
+        const mapRef = this.$parent.$refs.map;
+        if (mapRef) {
+          mapRef.setMapOptions(6, dong.latitude, dong.longitude);
+          mapRef.showMarkers(response.data);
+        }
     },
     backToSido() {
       this.selectedSido = null;

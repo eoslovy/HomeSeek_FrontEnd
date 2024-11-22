@@ -19,9 +19,20 @@ export const houseApi = {
     });
   },
 
-  // 시/도 코드로 아파트 검색
   searchByToggleWithSi: (code) => {
     return api.get("/map/getEstatesByToggleWithSi", {
+      params: { code }
+    });
+  },
+
+  searchByToggleWithGu: (code) => {
+    return api.get("/map/getEstatesByToggleWithGu", {
+      params: { code }
+    });
+  },
+
+  searchByToggleWithDong: (code) => {
+    return api.get("/map/getEstatesByToggleWithDong", {
       params: { code }
     });
   }
