@@ -14,13 +14,65 @@
               <div class="map-header">
                 <h3>강남구</h3>
               </div>
-              <div id="map1" ref="map1" class="map"></div>
+              <div class="map-content">
+                <div id="map1" ref="map1" class="map"></div>
+                <transition name="slide">
+                  <div v-if="showLeftModal" class="side-modal left-modal">
+                    <div class="modal-header">
+                      <span class="header-title">{{ leftApt.aptName }} 거래정보</span>
+                    </div>
+                    <div class="modal-content">
+                      <div class="chart-container">
+                        <Line v-if="leftChartData.datasets" :data="leftChartData" :options="chartOptions" />
+                      </div>
+                      <div class="price-history">
+                        <div class="history-header">
+                          <span>거래일</span>
+                          <span>면적</span>
+                          <span>가격</span>
+                        </div>
+                        <div v-for="deal in leftDeals" :key="deal.id" class="history-item">
+                          <span>{{ formatDate(deal.dealYear, deal.dealMonth, deal.dealDay) }}</span>
+                          <span>{{ deal.excluUseAr }}㎡</span>
+                          <span>{{ formatPrice(deal.dealAmount) }}만원</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </transition>
+              </div>
             </div>
             <div class="map-section">
               <div class="map-header">
                 <h3>송파구</h3>
               </div>
-              <div id="map2" ref="map2" class="map"></div>
+              <div class="map-content">
+                <div id="map2" ref="map2" class="map"></div>
+                <transition name="slide">
+                  <div v-if="showRightModal" class="side-modal right-modal">
+                    <div class="modal-header">
+                      <span class="header-title">{{ rightApt.aptName }} 거래정보</span>
+                    </div>
+                    <div class="modal-content">
+                      <div class="chart-container">
+                        <Line v-if="rightChartData.datasets" :data="rightChartData" :options="chartOptions" />
+                      </div>
+                      <div class="price-history">
+                        <div class="history-header">
+                          <span>거래일</span>
+                          <span>면적</span>
+                          <span>가격</span>
+                        </div>
+                        <div v-for="deal in rightDeals" :key="deal.id" class="history-item">
+                          <span>{{ formatDate(deal.dealYear, deal.dealMonth, deal.dealDay) }}</span>
+                          <span>{{ deal.excluUseAr }}㎡</span>
+                          <span>{{ formatPrice(deal.dealAmount) }}만원</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </transition>
+              </div>
             </div>
           </div>
         </div>
@@ -30,8 +82,13 @@
 </template>
 
 <script>
+import { Line } from 'vue-chartjs';
+
 export default {
   name: "AnalysisView",
+  components: {
+    Line
+  },
   props: {
     show: {
       type: Boolean,
@@ -42,65 +99,86 @@ export default {
     return {
       map1: null,
       map2: null,
+      showLeftModal: false,
+      showRightModal: false,
+      leftApt: {},
+      rightApt: {},
+      leftDeals: [],
+      rightDeals: [],
+      leftChartData: {},
+      rightChartData: {},
+      chartOptions: {
+        responsive: true,
+        maintainAspectRatio: false
+      }
     };
   },
-  watch: {
-    show: {
-      handler(newVal) {
-        if (newVal) {
-          this.$nextTick(() => {
-            setTimeout(() => {
-              this.initializeKakaoMaps();
-            }, 100);
-          });
-        }
-      },
-      immediate: true
-    }
-  },
   methods: {
-    initializeKakaoMaps() {
-      if (!window.kakao || !window.kakao.maps) {
-        console.error('Kakao maps SDK not loaded');
-        return;
+    showApartment(mapNum, apt) {
+      const map = mapNum === 1 ? this.map1 : this.map2;
+      const position = new kakao.maps.LatLng(apt.lat, apt.lng);
+      
+      const marker = new kakao.maps.Marker({
+        position: position,
+        map: map,
+        image: new kakao.maps.MarkerImage('/images/home.svg', new kakao.maps.Size(36, 36))
+      });
+
+      if (mapNum === 1) {
+        this.leftApt = apt;
+        this.showLeftModal = true;
+        // 거래 데이터 가져오기
+        this.fetchDeals(apt.id, 'left');
+      } else {
+        this.rightApt = apt;
+        this.showRightModal = true;
+        this.fetchDeals(apt.id, 'right');
       }
 
+      map.setCenter(position);
+      map.setLevel(3);
+    },
+
+    async fetchDeals(aptId, side) {
       try {
-        const mapContainer1 = this.$refs.map1;
-        const mapContainer2 = this.$refs.map2;
-
-        if (!mapContainer1 || !mapContainer2) {
-          console.error('Map containers not found');
-          return;
+        const response = await axios.get(`/api/deals/${aptId}`);
+        if (side === 'left') {
+          this.leftDeals = response.data;
+          this.updateChartData(response.data, 'left');
+        } else {
+          this.rightDeals = response.data;
+          this.updateChartData(response.data, 'right');
         }
-
-        const mapOption1 = {
-          center: new kakao.maps.LatLng(37.4959854, 127.0664091),
-          level: 5,
-        };
-        const mapOption2 = {
-          center: new kakao.maps.LatLng(37.5145937, 127.1059186),
-          level: 5,
-        };
-
-        this.map1 = new kakao.maps.Map(mapContainer1, mapOption1);
-        this.map2 = new kakao.maps.Map(mapContainer2, mapOption2);
-
-        window.dispatchEvent(new Event('resize'));
-        
-        setTimeout(() => {
-          this.map1.relayout();
-          this.map2.relayout();
-        }, 50);
-
       } catch (error) {
-        console.error('Error initializing maps:', error);
+        console.error('거래 데이터 조회 실패:', error);
       }
+    },
+
+    updateChartData(deals, side) {
+      const chartData = {
+        labels: deals.map(deal => `${deal.dealYear}.${deal.dealMonth}`),
+        datasets: [{
+          label: '거래가격',
+          data: deals.map(deal => deal.dealAmount),
+          borderColor: '#0a362f',
+          tension: 0.1
+        }]
+      };
+      
+      if (side === 'left') {
+        this.leftChartData = chartData;
+      } else {
+        this.rightChartData = chartData;
+      }
+    },
+
+    formatDate(year, month, day) {
+      return `${year}.${month}.${day}`;
+    },
+
+    formatPrice(price) {
+      return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
     }
-  },
-  unmounted() {
-    this.map1 = null;
-    this.map2 = null;
   }
 };
 </script>
@@ -214,5 +292,70 @@ export default {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+.map-content {
+  position: relative;
+  flex: 1;
+  display: flex;
+}
+
+.side-modal {
+  position: absolute;
+  top: 0;
+  width: 300px;
+  height: 100%;
+  background: white;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  overflow-y: auto;
+  z-index: 1;
+}
+
+.left-modal {
+  left: 0;
+  border-right: 1px solid #eee;
+}
+
+.right-modal {
+  left: 0;
+  border-right: 1px solid #eee;
+}
+
+.modal-header {
+  padding: 15px;
+  border-bottom: 1px solid #eee;
+  background: #fff;
+}
+
+.header-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #0a362f;
+}
+
+.chart-container {
+  height: 200px;
+  padding: 15px;
+}
+
+.price-history {
+  padding: 15px;
+}
+
+.history-header {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  padding: 10px 0;
+  border-bottom: 1px solid #eee;
+  font-weight: 600;
+  color: #333;
+}
+
+.history-item {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  padding: 10px 0;
+  border-bottom: 1px solid #eee;
+  color: #666;
 }
 </style>

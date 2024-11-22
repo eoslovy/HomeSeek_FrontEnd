@@ -384,6 +384,14 @@ export default {
                 hoveredInfowindow = null;
               });
 
+              kakao.maps.event.addListener(marker, 'click', () => {
+                this.$emit('select-house', {
+                  aptName: apt.aptName,
+                  si: apt.si,
+                  gu: apt.gu
+                });
+              });
+
               marker.aptData = { aptName: apt.aptName };
               return marker;
             });

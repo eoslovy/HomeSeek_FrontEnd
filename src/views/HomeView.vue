@@ -1,6 +1,6 @@
 <template>
   <div class="home">
-    <TheMap ref="map" />
+    <TheMap ref="map" @select-house="fetchHouseDeals" />
 
     <div id="search-box" class="search-container">
       <SearchBar 
