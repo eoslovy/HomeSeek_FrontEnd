@@ -83,11 +83,18 @@
 
 <script>
 import { Line } from 'vue-chartjs';
+import axios from 'axios';
 
 export default {
   name: "AnalysisView",
   components: {
     Line
+  },
+  mounted() {
+    // 카카오맵 초기화
+    if (window.kakao && window.kakao.maps) {
+      this.initializeMaps();
+    }
   },
   props: {
     show: {
@@ -114,9 +121,23 @@ export default {
     };
   },
   methods: {
+    initializeMaps() {
+      const mapOption = {
+        center: new kakao.maps.LatLng(37.5665, 126.9780),
+        level: 3
+      };
+
+      this.map1 = new kakao.maps.Map(this.$refs.map1, mapOption);
+      this.map2 = new kakao.maps.Map(this.$refs.map2, mapOption);
+    },
     showApartment(mapNum, apt) {
+      // 맵이 초기화되지 않았다면 초기화
+      if (!this.map1 || !this.map2) {
+        this.initializeMaps();
+      }
+
       const map = mapNum === 1 ? this.map1 : this.map2;
-      const position = new kakao.maps.LatLng(apt.lat, apt.lng);
+      const position = new kakao.maps.LatLng(apt.latitude, apt.longitude);
       
       const marker = new kakao.maps.Marker({
         position: position,
@@ -127,21 +148,32 @@ export default {
       if (mapNum === 1) {
         this.leftApt = apt;
         this.showLeftModal = true;
-        // 거래 데이터 가져오기
-        this.fetchDeals(apt.id, 'left');
+        this.fetchDeals(apt, 'left');
       } else {
         this.rightApt = apt;
         this.showRightModal = true;
-        this.fetchDeals(apt.id, 'right');
+        this.fetchDeals(apt, 'right');
       }
 
       map.setCenter(position);
       map.setLevel(3);
     },
 
-    async fetchDeals(aptId, side) {
+    async fetchDeals(apt, side) {
       try {
-        const response = await axios.get(`/api/deals/${aptId}`);
+        const houseInfo = {
+          aptSeq: apt.aptSeq,
+          aptName: apt.aptName,
+          si: apt.sidoName,
+          gu: apt.gugunName
+        };
+
+        const response = await axios.post('/deals/search', {
+          aptName: houseInfo.aptName,
+          si: houseInfo.si,
+          gu: houseInfo.gu
+        });
+
         if (side === 'left') {
           this.leftDeals = response.data;
           this.updateChartData(response.data, 'left');
@@ -155,11 +187,19 @@ export default {
     },
 
     updateChartData(deals, side) {
+      const sortedDeals = [...deals].sort((a, b) => {
+        const dateA = new Date(a.dealYear, a.dealMonth - 1, a.dealDay);
+        const dateB = new Date(b.dealYear, b.dealMonth - 1, b.dealDay);
+        return dateA - dateB;
+      });
+
       const chartData = {
-        labels: deals.map(deal => `${deal.dealYear}.${deal.dealMonth}`),
+        labels: sortedDeals.map(deal => 
+          `${deal.dealYear}.${String(deal.dealMonth).padStart(2, '0')}`
+        ),
         datasets: [{
           label: '거래가격',
-          data: deals.map(deal => deal.dealAmount),
+          data: sortedDeals.map(deal => deal.dealAmount),
           borderColor: '#0a362f',
           tension: 0.1
         }]
@@ -173,7 +213,7 @@ export default {
     },
 
     formatDate(year, month, day) {
-      return `${year}.${month}.${day}`;
+      return `${year}.${String(month).padStart(2, '0')}.${String(day).padStart(2, '0')}`;
     },
 
     formatPrice(price) {

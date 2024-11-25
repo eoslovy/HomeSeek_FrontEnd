@@ -3,7 +3,10 @@
     <div class="favorite-header">
       <div class="header-content">
         <span class="back-icon" @click="$emit('close')">←</span>
-        <span class="header-title">관심 목록</span>
+        <span class="header-title">{{ currentUser.nickname }}님의 관심 목록</span>
+        <button class="compare-btn" @click="toggleCompareMode">
+          {{ isCompareMode ? '비교 시작' : '비교하기' }}
+        </button>
       </div>
     </div>
     <div class="favorite-content">
@@ -24,9 +27,19 @@
               <span>{{ house.buildYear }}년 건축</span>
             </div>
           </div>
-          <button class="delete-btn" @click.stop="deleteFavorite(house)">
-            <i class="bi bi-trash"></i>
-          </button>
+          <div class="action-buttons">
+            <button 
+              v-if="isCompareMode"
+              class="select-btn"
+              :class="{ 'selected': selectedHouses.includes(house) }"
+              @click.stop="toggleHouseSelection(house)"
+            >
+              <i class="bi" :class="selectedHouses.includes(house) ? 'bi-check-circle-fill' : 'bi-circle'"></i>
+            </button>
+            <button class="delete-btn" @click.stop="deleteFavorite(house)">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -49,7 +62,9 @@ export default {
   data() {
     return {
       favoriteList: [],
-      isLoading: false
+      isLoading: false,
+      isCompareMode: false,
+      selectedHouses: []
     };
   },
   methods: {
@@ -124,6 +139,34 @@ export default {
           confirmButtonColor: '#dc3545'
         });
       }
+    },
+    toggleCompareMode() {
+      if (this.isCompareMode && this.selectedHouses.length === 2) {
+        this.$emit('compare-houses', this.selectedHouses);
+        this.isCompareMode = false;
+        this.selectedHouses = [];
+      } else {
+        this.isCompareMode = !this.isCompareMode;
+        this.selectedHouses = [];
+      }
+    },
+    toggleHouseSelection(house) {
+      if (this.selectedHouses.includes(house)) {
+        this.selectedHouses = this.selectedHouses.filter(h => h !== house);
+      } else {
+        if (this.selectedHouses.length >= 2) {
+          Swal.fire({
+            icon: 'warning',
+            title: '최대 2개까지만 선택 가능합니다',
+            showConfirmButton: false,
+            timer: 1500,
+            position: 'top-end',
+            toast: true
+          });
+          return;
+        }
+        this.selectedHouses.push(house);
+      }
     }
   },
   created() {
@@ -137,54 +180,57 @@ export default {
   position: absolute;
   top: 70px;
   left: 0;
-  width: 450px;
+  width: 400px;
   height: calc(100vh - 70px);
   background: white;
-  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
+  z-index: 999;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
 .favorite-header {
-  position: sticky;
-  top: 0;
   background: #0a362f;
-  color: white;
-  padding: 15px;
-  height: 56px;
+  padding: 16px;
+  height: 60px;
   display: flex;
   align-items: center;
-  z-index: 1001;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .header-content {
   display: flex;
   align-items: center;
+  width: 100%;
   gap: 15px;
 }
 
 .back-icon {
   font-size: 20px;
   cursor: pointer;
-  padding: 8px;
-  color: rgba(255, 255, 255, 0.9);
-  transition: color 0.2s ease;
-}
-
-.back-icon:hover {
   color: white;
 }
 
 .header-title {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 600;
-  letter-spacing: 0.5px;
-  color: rgba(255, 255, 255, 0.95);
+  color: white;
+}
+
+.compare-btn {
+  margin-left: auto;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.compare-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 
 .favorite-content {
-  height: calc(100vh - 126px);
+  height: calc(100vh - 196px);
   overflow-y: auto;
   padding: 16px;
 }
@@ -256,5 +302,31 @@ export default {
 .house-sub-info {
   font-size: 14px;
   color: #888;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  padding-right: 8px;
+}
+
+.select-btn {
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  padding: 8px;
+  font-size: 18px;
+  opacity: 0.7;
+  transition: all 0.2s ease;
+}
+
+.select-btn:hover {
+  opacity: 1;
+}
+
+.select-btn.selected {
+  color: #0a362f;
+  opacity: 1;
 }
 </style>
