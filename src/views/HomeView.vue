@@ -42,6 +42,7 @@
         @view-house="handleViewHouse"
         @select-house="fetchHouseDeals"
         @favorite-deleted="handleFavoriteDeleted"
+        @compare-houses="handleCompareHouses"
         ref="favoriteList"
       />
     </transition>
@@ -148,6 +149,12 @@
       </div>
     </div>
   </transition>
+
+  <AnalysisView 
+    :show="currentNav === 'analysis'"
+    @close="closeNav"
+    ref="analysisView"
+  />
   </div>
 </template>
 
@@ -173,6 +180,7 @@ import NewsView from "@/components/navbar/NewsView.vue";
 import PolicyView from "@/components/navbar/PolicyView.vue";
 import LoanView from "@/components/navbar/LoanView.vue";
 import FavoriteListView from "@/components/navbar/FavoriteListView.vue";
+import AnalysisView from '@/components/navbar/AnalysisView.vue';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 
@@ -198,7 +206,8 @@ export default {
     PolicyView,
     LoanView,
     FavoriteListView,
-    Line
+    Line,
+    AnalysisView
   },
   data() {
     return {
@@ -292,7 +301,7 @@ export default {
       this.currentNav = navItem;
     },
     closeNav() {
-      this.currentNav = null;
+      this.currentNav = '';
     },
     handleSearchKeywordChange(keyword) {
       this.currentSearchKeyword = keyword;
@@ -505,6 +514,15 @@ export default {
       if (this.selectedHouse && this.selectedHouse.aptSeq === aptSeq) {
         this.isFavorite = false;
       }
+    },
+    handleCompareHouses(houses) {
+      this.currentNav = 'analysis';
+      this.$nextTick(() => {
+        if (this.$refs.analysisView) {
+          this.$refs.analysisView.showApartment(1, houses[0]);
+          this.$refs.analysisView.showApartment(2, houses[1]);
+        }
+      });
     }
   }
 };
