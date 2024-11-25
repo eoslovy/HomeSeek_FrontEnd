@@ -41,6 +41,8 @@
         @close="closeNav"
         @view-house="handleViewHouse"
         @select-house="fetchHouseDeals"
+        @favorite-deleted="handleFavoriteDeleted"
+        ref="favoriteList"
       />
     </transition>
 
@@ -449,6 +451,11 @@ export default {
 
         this.isFavorite = !this.isFavorite;
         
+        // 관심 목록 컴포넌트가 있다면 목록 새로고침
+        if (this.$refs.favoriteList) {
+          this.$refs.favoriteList.fetchUserFavoriteList();
+        }
+        
         Swal.fire({
           icon: 'success',
           title: this.isFavorite ? '관심 목록에 추가되었습니다' : '관심 목록에서 제거되었습니다',
@@ -493,6 +500,11 @@ export default {
       this.selectedHouse = house;
       this.showRightModal = true;
       this.$refs.map.showMarker(house);
+    },
+    handleFavoriteDeleted(aptSeq) {
+      if (this.selectedHouse && this.selectedHouse.aptSeq === aptSeq) {
+        this.isFavorite = false;
+      }
     }
   }
 };

@@ -69,16 +69,18 @@ export default {
         });
 
         // 주변 시설 정보 동시에 요청
-        const [hospitals, markets, subway] = await Promise.all([
+        const [hospitals, markets, subways, schools] = await Promise.all([
           this.fetchNearbyFacilities('hospitals'),
           this.fetchNearbyFacilities('markets'),
-          this.fetchNearbyFacilities('subway')
+          this.fetchNearbyFacilities('subways'),
+          this.fetchNearbyFacilities('schools')
         ]);
 
         // 각 시설 유형별 마커 생성 및 표시
         this.createFacilityMarkers(hospitals, 'hospital');
         this.createFacilityMarkers(markets, 'market');
-        this.createFacilityMarkers(subway, 'subway');
+        this.createFacilityMarkers(subways, 'subway');
+        this.createFacilityMarkers(schools, 'school');
 
       } catch (error) {
         console.error("카카오맵 초기화 중 오류:", error);
@@ -159,6 +161,9 @@ export default {
           break;
         case 'subway':
           imageSrc = '/images/subway.svg';
+          break;
+        case 'school':
+          imageSrc = '/images/school.svg';
           break;
       }
       
@@ -246,6 +251,35 @@ export default {
                 line-height: 1.4;
               ">
                 <p style="margin: 4px 0;">${facility.line}호선</p>
+              </div>
+            </div>
+          `;
+        case 'school':
+        return `
+            <div style="
+              padding: 8px;
+              max-width: 200px;
+              word-break: keep-all;
+              word-wrap: break-word;
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            ">
+              <div style="
+                font-size: 14px;
+                font-weight: 600;
+                color: #0a362f;
+                margin-bottom: 4px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+              ">${facility.name}</div>
+              <div style="
+                font-size: 12px;
+                color: #666;
+                line-height: 1.4;
+              ">
+                <p style="margin: 4px 0;">학교 분류 : ${facility.category || '정보없음'}</p>
+                <p style="margin: 4px 0;">설립 분류 : ${facility.type || '정보없음'}</p>
+                <p style="margin: 4px 0; word-break: keep-all;">주소 : ${facility.address || '정보없음'}</p>
               </div>
             </div>
           `;
