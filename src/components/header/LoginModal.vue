@@ -198,6 +198,7 @@ export default {
 
         if (response.ok) {
           const userData = {
+            id: data.id,
             userId: data.userId,
             nickname: data.nickname,
             autoLogin: data.autoLogin,
