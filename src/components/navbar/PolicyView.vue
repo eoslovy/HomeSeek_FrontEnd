@@ -216,7 +216,7 @@ export default {
 .policy-button {
   margin-left: auto;
   padding: 8px 16px;
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: #4CAF50;
   border: 1px solid rgba(255, 255, 255, 0.2);
   color: white;
   border-radius: 4px;
@@ -226,6 +226,6 @@ export default {
 }
 
 .policy-button:hover {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: #45a049;
 }
 </style>

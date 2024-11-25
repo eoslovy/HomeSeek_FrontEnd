@@ -459,12 +459,12 @@ export default {
 }
 
 .ho-login {
-  background: linear-gradient(to right, #1e40af, #1e3a8a);
+  background: #0a362f;
   color: white;
 }
 
 .ho-login:hover {
-  background: #3f43a3;
+  background: #0d4a40;
 }
 
 .kakao-login {
@@ -561,6 +561,8 @@ input {
   border: 1px solid #ddd;
   border-radius: 8px;
   font-size: 16px;
+  color: #000;
+  background-color: white;
 }
 
 input:focus {
@@ -624,7 +626,7 @@ input:focus {
 .signup-btn {
   width: 100%;
   padding: 12px;
-  background: #4a90e2;
+  background: #0a362f;
   color: white;
   border: none;
   border-radius: 5px;
@@ -634,7 +636,7 @@ input:focus {
 }
 
 .signup-btn:hover {
-  background: #357abd;
+  background: #0d4a40;
 }
 
 .signup-btn:disabled {
@@ -646,15 +648,24 @@ input:focus {
   display: flex;
   align-items: center;
   margin: 10px 0;
+  background-color: white;
+  padding: 8px;
+  border-radius: 8px;
 }
 
 .auto-login-wrapper input[type="checkbox"] {
   margin-right: 8px;
-  width: auto;
+  width: 16px;
+  height: 16px;
+  background-color: transparent;
+  vertical-align: middle;
 }
 
 .auto-login-wrapper label {
-  color: #666;
+  color: #000;
   font-size: 14px;
+  vertical-align: middle;
+  line-height: 16px;
+  margin-bottom: 0;
 }
 </style>
