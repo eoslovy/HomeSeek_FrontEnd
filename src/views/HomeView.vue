@@ -1,10 +1,14 @@
 <template>
   <div class="home">
-    <TheMap ref="map" @select-house="fetchHouseDeals" />
+    <TheMap
+      ref="map"
+      @cluster-click="handleClusterClick"
+      :apartments="apartments"
+    />
 
     <div id="search-box" class="search-container">
-      <SearchBar 
-        @toggle-filter="toggleFilter" 
+      <SearchBar
+        @toggle-filter="toggleFilter"
         @search-keyword-change="handleSearchKeywordChange"
       />
       <RegionFilter :show="showFilter" ref="regionFilter" />
@@ -36,8 +40,8 @@
       <LoanView v-if="currentNav === 'loan'" @close="closeNav" />
     </transition>
     <transition name="slide">
-      <FavoriteListView 
-        v-if="currentNav === 'favoritelist'" 
+      <FavoriteListView
+        v-if="currentNav === 'favoritelist'"
         @close="closeNav"
         @view-house="handleViewHouse"
         @select-house="fetchHouseDeals"
@@ -47,130 +51,149 @@
       />
     </transition>
 
-  <!-- 오른쪽 모달 -->
-  <transition name="slide-right">
-    <div v-if="showRightModal" class="right-modal">
-      <div class="modal-header">
-        <span class="back-icon" @click="closeRightModal">←</span>
-        <span class="header-title">{{ selectedHouse.aptName }} 거래정보</span>
-        <div class="header-buttons">
-          <button 
-            class="favorite-button" 
-            :class="{ 'active': isFavorite }"
-            @click="toggleFavorite"
-          >
-            <i class="bi" :class="isFavorite ? 'bi-star-fill' : 'bi-star'"></i>
-          </button>
-          <button class="listing-button" @click="fetchAndShowListings">
-            매물보기
-          </button>
-        </div>
-      </div>
-      <div class="modal-content">
-        <div class="area-filter">
-          <select v-model="selectedArea" @change="filterByArea" class="area-select">
-            <option value="all">전체 면적</option>
-            <option v-for="area in uniqueAreas" :key="area" :value="area">
-              {{ area }}㎡
-            </option>
-          </select>
-        </div>
-
-        <div class="chart-container">
-          <Line
-            v-if="chartData.datasets"
-            :data="chartData"
-            :options="chartOptions"
-          />
-        </div>
-        <div class="price-history">
-          <div class="history-header">
-            <span>거래일</span>
-            <span>면적</span>
-            <span>가격</span>
-          </div>
-          <div v-for="deal in filteredDeals" :key="deal.id" class="history-item">
-            <span>{{ formatDate(deal.dealYear, deal.dealMonth, deal.dealDay) }}</span>
-            <span>{{ deal.excluUseAr }}㎡</span>
-            <span>{{ formatPrice(deal.dealAmount) }}만원</span>
+    <!-- 오른쪽 모달 -->
+    <transition name="slide-right">
+      <div v-if="showRightModal" class="right-modal">
+        <div class="modal-header">
+          <span class="back-icon" @click="closeRightModal">←</span>
+          <span class="header-title">{{ selectedHouse.aptName }} 거래정보</span>
+          <div class="header-buttons">
+            <button
+              class="favorite-button"
+              :class="{ active: isFavorite }"
+              @click="toggleFavorite"
+            >
+              <i
+                class="bi"
+                :class="isFavorite ? 'bi-star-fill' : 'bi-star'"
+              ></i>
+            </button>
+            <button class="listing-button" @click="fetchAndShowListings">
+              매물보기
+            </button>
           </div>
         </div>
-      </div>
-    </div>
-  </transition>
+        <div class="modal-content">
+          <div class="area-filter">
+            <select
+              v-model="selectedArea"
+              @change="filterByArea"
+              class="area-select"
+            >
+              <option value="all">전체 면적</option>
+              <option v-for="area in uniqueAreas" :key="area" :value="area">
+                {{ area }}㎡
+              </option>
+            </select>
+          </div>
 
-  <!-- 매물 모달 -->
-  <transition name="fade">
-    <div v-if="showListingModal" class="listing-modal">
-      <div class="modal-header">
-        <span class="back-icon" @click="closeListingModal">←</span>
-        <span class="header-title">{{ selectedHouse.aptName }} 매물</span>
-        <button class="ai-button" @click="getAIAdvice">
-          AI 추천
-        </button>
-      </div>
-      <div class="modal-content">
-        <div class="area-filter">
-          <select v-model="selectedListingArea" class="area-select">
-            <option value="all">전체 면적</option>
-            <option v-for="area in uniqueListingAreas" :key="area" :value="area">
-              {{ area }}㎡
-            </option>
-          </select>
-        </div>
-        <div class="listing-list">
-          <div v-for="item in filteredListings" :key="item.id" class="listing-item">
-            <div class="listing-info">
-              <div class="listing-price">{{ formatPrice(item.price) }}만원</div>
-              <div class="listing-detail">매매 | {{ item.excluUseAr }}㎡</div>
-              <div class="listing-location">{{ item.description }}</div>
+          <div class="chart-container">
+            <Line
+              v-if="chartData.datasets"
+              :data="chartData"
+              :options="chartOptions"
+            />
+          </div>
+          <div class="price-history">
+            <div class="history-header">
+              <span>거래일</span>
+              <span>면적</span>
+              <span>가격</span>
             </div>
-            <div class="listing-contact">
-              <div class="agent">{{ item.agentNm }}</div>
+            <div
+              v-for="deal in filteredDeals"
+              :key="deal.id"
+              class="history-item"
+            >
+              <span>{{
+                formatDate(deal.dealYear, deal.dealMonth, deal.dealDay)
+              }}</span>
+              <span>{{ deal.excluUseAr }}㎡</span>
+              <span>{{ formatPrice(deal.dealAmount) }}만원</span>
             </div>
           </div>
         </div>
       </div>
-    </div>
-  </transition>
+    </transition>
 
-  <!-- AI 추천 모달 -->
-  <transition name="fade">
-    <div v-if="showAIModal" class="ai-modal">
-      <div class="modal-header">
-        <span class="back-icon" @click="closeAIModal">←</span>
-        <span class="header-title">AI 매물 분석</span>
-      </div>
-      <div class="modal-content">
-        <div v-if="isLoading" class="loading">
-          분석 중...
+    <!-- 매물 모달 -->
+    <transition name="fade">
+      <div v-if="showListingModal" class="listing-modal">
+        <div class="modal-header">
+          <span class="back-icon" @click="closeListingModal">←</span>
+          <span class="header-title">{{ selectedHouse.aptName }} 매물</span>
+          <button class="ai-button" @click="getAIAdvice">AI 추천</button>
         </div>
-        <div v-else class="ai-content" v-html="formattedAIAdvice"></div>
+        <div class="modal-content">
+          <div class="area-filter">
+            <select v-model="selectedListingArea" class="area-select">
+              <option value="all">전체 면적</option>
+              <option
+                v-for="area in uniqueListingAreas"
+                :key="area"
+                :value="area"
+              >
+                {{ area }}㎡
+              </option>
+            </select>
+          </div>
+          <div class="listing-list">
+            <div
+              v-for="item in filteredListings"
+              :key="item.id"
+              class="listing-item"
+            >
+              <div class="listing-info">
+                <div class="listing-price">
+                  {{ formatPrice(item.price) }}만원
+                </div>
+                <div class="listing-detail">매매 | {{ item.excluUseAr }}㎡</div>
+                <div class="listing-location">{{ item.description }}</div>
+              </div>
+              <div class="listing-contact">
+                <div class="agent">{{ item.agentNm }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
-  </transition>
+    </transition>
 
-  <AnalysisView 
-    :show="currentNav === 'analysis'"
-    @close="closeNav"
-    ref="analysisView"
-  />
+    <!-- AI 추천 모달 -->
+    <transition name="fade">
+      <div v-if="showAIModal" class="ai-modal">
+        <div class="modal-header">
+          <span class="back-icon" @click="closeAIModal">←</span>
+          <span class="header-title">AI 매물 분석</span>
+        </div>
+        <div class="modal-content">
+          <div v-if="isLoading" class="loading">분석 중...</div>
+          <div v-else class="ai-content" v-html="formattedAIAdvice"></div>
+        </div>
+      </div>
+    </transition>
+
+    <AnalysisView
+      :show="currentNav === 'analysis'"
+      @close="closeNav"
+      ref="analysisView"
+    />
   </div>
 </template>
 
 <script>
-import { mapState } from "vuex";
-import { Line } from 'vue-chartjs';
-import { 
-  Chart as ChartJS, 
-  CategoryScale, 
-  LinearScale, 
-  PointElement, 
-  LineElement, 
-  Title, 
-  Tooltip, 
-  Legend 
-} from 'chart.js';
+import { mapState, mapActions } from "vuex";
+import { Line } from "vue-chartjs";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js";
 import TheMap from "@/components/TheMap.vue";
 import HouseList from "@/components/HouseList.vue";
 import SearchBar from "@/components/SearchBar.vue";
@@ -180,9 +203,9 @@ import NewsView from "@/components/navbar/NewsView.vue";
 import PolicyView from "@/components/navbar/PolicyView.vue";
 import LoanView from "@/components/navbar/LoanView.vue";
 import FavoriteListView from "@/components/navbar/FavoriteListView.vue";
-import AnalysisView from '@/components/navbar/AnalysisView.vue';
-import axios from 'axios';
-import Swal from 'sweetalert2';
+import AnalysisView from "@/components/navbar/AnalysisView.vue";
+import axios from "axios";
+import Swal from "sweetalert2";
 
 ChartJS.register(
   CategoryScale,
@@ -207,83 +230,125 @@ export default {
     LoanView,
     FavoriteListView,
     Line,
-    AnalysisView
+    AnalysisView,
   },
   data() {
     return {
       showFilter: false,
       showBuyTable: true,
       showRentTable: false,
-      currentNav: '',
-      currentSearchKeyword: '',
+      currentNav: "",
+      currentSearchKeyword: "",
       showListingModal: false,
       dealList: [],
       selectedHouse: {},
       showRightModal: false,
       chartData: {
         labels: [],
-        datasets: []
+        datasets: [],
       },
       chartOptions: {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
           legend: {
-            display: true
+            display: true,
           },
           title: {
             display: true,
-            text: '거래가격 추이'
-          }
-        }
+            text: "거래가격 추이",
+          },
+        },
       },
-      selectedArea: 'all',
+      selectedArea: "all",
       listingData: [],
-      selectedListingArea: 'all',
+      selectedListingArea: "all",
       showAIModal: false,
       isLoading: false,
-      aiAdvice: '',
-      isFavorite: false
+      aiAdvice: "",
+      isFavorite: false,
     };
   },
   computed: {
     ...mapState({
       houses: (state) => state.house.houses,
       currentUser: (state) => state.auth.user,
-      isLoggedIn: (state) => state.auth.isLoggedIn
+      isLoggedIn: (state) => state.auth.isLoggedIn,
     }),
     uniqueAreas() {
-      return [...new Set(this.dealList.map(deal => deal.excluUseAr))].sort((a, b) => a - b);
+      return [...new Set(this.dealList.map((deal) => deal.excluUseAr))].sort(
+        (a, b) => a - b
+      );
     },
     filteredDeals() {
-      if (this.selectedArea === 'all') {
+      if (this.selectedArea === "all") {
         return this.dealList;
       }
-      return this.dealList.filter(deal => deal.excluUseAr === this.selectedArea);
+      return this.dealList.filter(
+        (deal) => deal.excluUseAr === this.selectedArea
+      );
     },
     uniqueListingAreas() {
-      return [...new Set(this.listingData.map(item => item.excluUseAr))].sort((a, b) => a - b);
+      return [...new Set(this.listingData.map((item) => item.excluUseAr))].sort(
+        (a, b) => a - b
+      );
     },
     filteredListings() {
-      if (this.selectedListingArea === 'all') {
+      if (this.selectedListingArea === "all") {
         return this.listingData;
       }
-      return this.listingData.filter(item => item.excluUseAr === this.selectedListingArea);
+      return this.listingData.filter(
+        (item) => item.excluUseAr === this.selectedListingArea
+      );
     },
     formattedAIAdvice() {
       return this.aiAdvice
-        .replace(/시장 상황/g, '<span style="color: #0a362f; font-weight: bold;">시장 상황</span>')
-        .replace(/최근 실거래 추이/g, '<span style="color: #0a362f; font-weight: bold;">최근 실거래 추이</span>')
-        .replace(/매물 정보/g, '<span style="color: #0a362f; font-weight: bold;">매물 정보</span>')
-        .replace(/종합적으로/g, '<span style="color: #0a362f; font-weight: bold;">종합적으로</span>')
-        .replace(/시세 동향/g, '<span style="color: #0a362f; font-weight: bold;">시세 동향</span>')
-        .replace(/실거래가 정보/g, '<span style="color: #0a362f; font-weight: bold;">실거래가 정보</span>')
-        .replace(/매물가/g, '<span style="color: #0a362f; font-weight: bold;">매물가</span>')
-        .replace(/매수자/g, '<span style="color: #0a362f; font-weight: bold;">매수자</span>')
-        .replace(/현재 시장/g, '<span style="color: #0a362f; font-weight: bold;">현재 시장</span>');
-    }
+        .replace(
+          /시장 상황/g,
+          '<span style="color: #0a362f; font-weight: bold;">시장 상황</span>'
+        )
+        .replace(
+          /최근 실거래 추이/g,
+          '<span style="color: #0a362f; font-weight: bold;">최근 실거래 추이</span>'
+        )
+        .replace(
+          /매물 정보/g,
+          '<span style="color: #0a362f; font-weight: bold;">매물 정보</span>'
+        )
+        .replace(
+          /종합적으로/g,
+          '<span style="color: #0a362f; font-weight: bold;">종합적으로</span>'
+        )
+        .replace(
+          /시세 동향/g,
+          '<span style="color: #0a362f; font-weight: bold;">시세 동향</span>'
+        )
+        .replace(
+          /실거래가 정보/g,
+          '<span style="color: #0a362f; font-weight: bold;">실거래가 정보</span>'
+        )
+        .replace(
+          /매물가/g,
+          '<span style="color: #0a362f; font-weight: bold;">매물가</span>'
+        )
+        .replace(
+          /매수자/g,
+          '<span style="color: #0a362f; font-weight: bold;">매수자</span>'
+        )
+        .replace(
+          /현재 시장/g,
+          '<span style="color: #0a362f; font-weight: bold;">현재 시장</span>'
+        );
+    },
   },
   methods: {
+    ...mapActions([
+      "fetchGugunList",
+      "fetchDongList",
+      "fetchApartments",
+      "setSelectedRegion",
+    ]),
+
     toggleFilter() {
       if (this.showFilter && this.$refs.regionFilter) {
         this.$refs.regionFilter.resetSelection();
@@ -301,12 +366,12 @@ export default {
       this.currentNav = navItem;
     },
     closeNav() {
-      this.currentNav = '';
+      this.currentNav = "";
     },
     handleSearchKeywordChange(keyword) {
       this.currentSearchKeyword = keyword;
       if (!keyword) {
-        this.$store.commit('house/setHouses', []);
+        this.$store.commit("house/setHouses", []);
       }
     },
     toggleRightModal() {
@@ -316,13 +381,16 @@ export default {
       this.showRightModal = false;
     },
     formatPrice(price) {
-      if (!price) return '';
-      return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+      if (!price) return "";
+      return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     },
     updateChartData() {
-      const dealsToShow = this.selectedArea === 'all' 
-        ? this.dealList 
-        : this.dealList.filter(deal => deal.excluUseAr === this.selectedArea);
+      const dealsToShow =
+        this.selectedArea === "all"
+          ? this.dealList
+          : this.dealList.filter(
+              (deal) => deal.excluUseAr === this.selectedArea
+            );
 
       const sortedDeals = [...dealsToShow].sort((a, b) => {
         const dateA = new Date(a.dealYear, a.dealMonth - 1, a.dealDay);
@@ -331,15 +399,18 @@ export default {
       });
 
       this.chartData = {
-        labels: sortedDeals.map(deal => 
-          `${deal.dealYear}.${String(deal.dealMonth).padStart(2, '0')}`
+        labels: sortedDeals.map(
+          (deal) =>
+            `${deal.dealYear}.${String(deal.dealMonth).padStart(2, "0")}`
         ),
-        datasets: [{
-          label: '거래가격',
-          data: sortedDeals.map(deal => deal.dealAmount),
-          borderColor: '#0a362f',
-          tension: 0.1
-        }]
+        datasets: [
+          {
+            label: "거래가격",
+            data: sortedDeals.map((deal) => deal.dealAmount),
+            borderColor: "#0a362f",
+            tension: 0.1,
+          },
+        ],
       };
     },
     toggleListingModal() {
@@ -350,81 +421,84 @@ export default {
     },
     async fetchHouseDeals(houseInfo) {
       try {
-        const response = await axios.post('/deals/search', {
+        const response = await axios.post("/deals/search", {
           aptName: houseInfo.aptName,
           si: houseInfo.si,
-          gu: houseInfo.gu
+          gu: houseInfo.gu,
         });
         this.dealList = response.data;
         this.selectedHouse = houseInfo;
         this.showRightModal = true;
-        this.selectedArea = 'all';
+        this.selectedArea = "all";
         this.updateChartData();
         await this.checkFavoriteStatus();
       } catch (error) {
-        console.error('거래 정보 조회 실패:', error);
+        console.error("거래 정보 조회 실패:", error);
       }
     },
     formatDate(year, month, day) {
-      return `${year}.${String(month).padStart(2, '0')}.${String(day).padStart(2, '0')}`;
+      return `${year}.${String(month).padStart(2, "0")}.${String(day).padStart(
+        2,
+        "0"
+      )}`;
     },
     filterByArea() {
       this.updateChartData();
     },
     async fetchAndShowListings() {
       try {
-        const response = await axios.post('/sales/search', {
+        const response = await axios.post("/sales/search", {
           aptName: this.selectedHouse.aptName,
           si: this.selectedHouse.si,
-          gu: this.selectedHouse.gu
+          gu: this.selectedHouse.gu,
         });
         this.listingData = response.data;
         this.showListingModal = true;
       } catch (error) {
-        console.error('매물 정보 조회 실패:', error);
+        console.error("매물 정보 조회 실패:", error);
       }
     },
     async getAIAdvice() {
       Swal.fire({
-        title: 'AI 분석 중...',
-        html: '<span style="color: #0a362f; font-weight: bold;">시장 상황</span>, ' + 
-              '<span style="color: #0a362f; font-weight: bold;">최근 실거래 추이</span>, ' +
-              '<span style="color: #0a362f; font-weight: bold;">매물 정보</span>를 활용하여<br>' +
-              '<span style="color: #0a362f; font-weight: bold;">종합적으로</span> 분석하고 있습니다.',
+        title: "AI 분석 중...",
+        html:
+          '<span style="color: #0a362f; font-weight: bold;">시장 상황</span>, ' +
+          '<span style="color: #0a362f; font-weight: bold;">최근 실거래 추이</span>, ' +
+          '<span style="color: #0a362f; font-weight: bold;">매물 정보</span>를 활용하여<br>' +
+          '<span style="color: #0a362f; font-weight: bold;">종합적으로</span> 분석하고 있습니다.',
         showConfirmButton: false,
         allowOutsideClick: false,
-        background: 'white',
+        background: "white",
         didOpen: () => {
           Swal.showLoading();
-          const spinner = document.querySelector('.swal2-loading');
+          const spinner = document.querySelector(".swal2-loading");
           if (spinner) {
-            spinner.firstChild.classList.add('custom-loading-spinner');
+            spinner.firstChild.classList.add("custom-loading-spinner");
           }
-        }
+        },
       });
-      
+
       const requestData = {
         aptName: this.selectedHouse.aptName,
         si: this.selectedHouse.si,
-        gu: this.selectedHouse.gu
+        gu: this.selectedHouse.gu,
       };
 
       try {
-        const response = await axios.post('/openai/advice', requestData);
-        
+        const response = await axios.post("/openai/advice", requestData);
+
         Swal.close();
         this.aiAdvice = response.data;
         this.showAIModal = true;
-
       } catch (error) {
-        console.error('AI 추천 조회 실패:', error.response || error);
-        
+        console.error("AI 추천 조회 실패:", error.response || error);
+
         Swal.fire({
-          icon: 'error',
-          title: 'AI 분석 실패',
-          text: '죄송합니다. 현재 AI 분석을 제공할 수 없습니다.',
-          confirmButtonText: '확인',
-          confirmButtonColor: '#dc3545'
+          icon: "error",
+          title: "AI 분석 실패",
+          text: "죄송합니다. 현재 AI 분석을 제공할 수 없습니다.",
+          confirmButtonText: "확인",
+          confirmButtonColor: "#dc3545",
         });
       }
     },
@@ -434,75 +508,77 @@ export default {
     async toggleFavorite() {
       if (!this.isLoggedIn) {
         Swal.fire({
-          icon: 'warning',
-          title: '로그인이 필요합니다',
-          text: '관심 목록 기능은 로그인 후 이용 가능합니다.',
-          confirmButtonText: '확인',
-          confirmButtonColor: '#0a362f'
+          icon: "warning",
+          title: "로그인이 필요합니다",
+          text: "관심 목록 기능은 로그인 후 이용 가능합니다.",
+          confirmButtonText: "확인",
+          confirmButtonColor: "#0a362f",
         });
         return;
       }
 
       try {
         if (this.isFavorite) {
-          await axios.delete('/users/deleteFavorite', {
+          await axios.delete("/users/deleteFavorite", {
             data: {
               userId: this.currentUser.id,
-              aptSeq: this.selectedHouse.aptSeq
-            }
+              aptSeq: this.selectedHouse.aptSeq,
+            },
           });
         } else {
-          await axios.post('/users/setFavorite', {
+          await axios.post("/users/setFavorite", {
             userId: this.currentUser.id,
-            aptSeq: this.selectedHouse.aptSeq
+            aptSeq: this.selectedHouse.aptSeq,
           });
         }
 
         this.isFavorite = !this.isFavorite;
-        
+
         // 관심 목록 컴포넌트가 있다면 목록 새로고침
         if (this.$refs.favoriteList) {
           this.$refs.favoriteList.fetchUserFavoriteList();
         }
-        
+
         Swal.fire({
-          icon: 'success',
-          title: this.isFavorite ? '관심 목록에 추가되었습니다' : '관심 목록에서 제거되었습니다',
+          icon: "success",
+          title: this.isFavorite
+            ? "관심 목록에 추가되었습니다"
+            : "관심 목록에서 제거되었습니다",
           showConfirmButton: false,
           timer: 1500,
-          position: 'top-end',
-          toast: true
+          position: "top-end",
+          toast: true,
         });
       } catch (error) {
-        console.error('관심 목록 처리 실패:', error);
+        console.error("관심 목록 처리 실패:", error);
         Swal.fire({
-          icon: 'error',
-          title: '처리 실패', 
-          text: '관심 목록 처리 중 오류가 발생했습니다.',
-          confirmButtonText: '확인',
-          confirmButtonColor: '#dc3545'
+          icon: "error",
+          title: "처리 실패",
+          text: "관심 목록 처리 중 오류가 발생했습니다.",
+          confirmButtonText: "확인",
+          confirmButtonColor: "#dc3545",
         });
       }
     },
 
     async checkFavoriteStatus() {
       if (!this.isLoggedIn) return;
-      
+
       try {
         const response = await axios.get(`/users/getFavorite`, {
           params: {
             userId: this.currentUser.id,
-            aptSeq: this.selectedHouse.aptSeq
-          }
+            aptSeq: this.selectedHouse.aptSeq,
+          },
         });
 
-        if(response.data.check){
+        if (response.data.check) {
           this.isFavorite = true;
-        }else{
+        } else {
           this.isFavorite = false;
         }
       } catch (error) {
-        console.error('관심 목록 상태 확인 실패:', error);
+        console.error("관심 목록 상태 확인 실패:", error);
       }
     },
     handleViewHouse(house) {
@@ -516,15 +592,87 @@ export default {
       }
     },
     handleCompareHouses(houses) {
-      this.currentNav = 'analysis';
+      this.currentNav = "analysis";
       this.$nextTick(() => {
         if (this.$refs.analysisView) {
           this.$refs.analysisView.showApartment(1, houses[0]);
           this.$refs.analysisView.showApartment(2, houses[1]);
         }
       });
-    }
-  }
+    },
+    async handleClusterClick({ level, key, apartments }) {
+      try {
+        const currentSido = this.$store.state.region.selectedSido;
+        const currentGugun = this.$store.state.region.selectedGugun;
+
+        switch (level) {
+          case "gu":
+            // 구 선택 시
+            await this.setSelectedRegion({
+              type: "gugun",
+              code: key,
+              name: key,
+            });
+
+            // 해당 구의 동 목록 조회
+            await this.fetchDongList({
+              sido: currentSido.sidoCode,
+              gugun: key,
+            });
+
+            // 해당 구의 아파트 목록 조회
+            await this.fetchApartments({
+              sido: currentSido.sidoCode,
+              gugun: key,
+            });
+
+            // 지도 중심 이동 및 확대
+            if (apartments[0]) {
+              this.$refs.map.setMapOptions(
+                6,
+                apartments[0].latitude,
+                apartments[0].longitude
+              );
+            }
+            break;
+
+          case "dong":
+            // 동 선택 시
+            await this.setSelectedRegion({
+              type: "dong",
+              code: key,
+              name: key,
+            });
+
+            // 해당 동의 아파트 목록 조회
+            await this.fetchApartments({
+              sido: currentSido.sidoCode,
+              gugun: currentGugun.gugunCode,
+              dong: key,
+            });
+
+            // 지도 중심 이동 및 확대
+            if (apartments[0]) {
+              this.$refs.map.setMapOptions(
+                4,
+                apartments[0].latitude,
+                apartments[0].longitude
+              );
+            }
+            break;
+
+          case "detail":
+            // 아파트 상세 정보 표시
+            this.showRightModal = true;
+            this.selectedApartment = apartments[0];
+            this.$refs.map.showMarker(apartments[0]);
+            break;
+        }
+      } catch (error) {
+        console.error("클러스터 클릭 처리 중 오류:", error);
+      }
+    },
+  },
 };
 </script>
 
@@ -651,7 +799,8 @@ export default {
   border-radius: 8px;
 }
 
-.current-price, .compare-price {
+.current-price,
+.compare-price {
   text-align: center;
 }
 
@@ -795,7 +944,7 @@ export default {
 .ai-button {
   margin-left: auto;
   padding: 6px 12px;
-  background-color: #4CAF50;
+  background-color: #4caf50;
   color: white;
   border: none;
   border-radius: 4px;
@@ -881,8 +1030,12 @@ export default {
 }
 
 @keyframes halfSpin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* SweetAlert2 커스텀 스타일 */
