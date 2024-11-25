@@ -157,7 +157,13 @@ export default {
     },
   },
   created() {
-    this.checkAutoLogin();
+    const user = localStorage.getItem('user');
+    if (user && JSON.parse(user).autoLogin) {
+      const userData = JSON.parse(user);
+      this.isLoggedIn = true;
+      this.userId = userData.nickname;
+      this.$store.commit("auth/SET_LOGIN", userData);
+    }
   },
   props: {
     show: {
@@ -191,20 +197,28 @@ export default {
         const data = await response.json();
 
         if (response.ok) {
-          localStorage.setItem("userNickname", data.nickname);
-          localStorage.setItem("accessToken", data.accessToken);
-          localStorage.setItem("refreshToken", data.refreshToken);
+          const userData = {
+            userId: data.userId,
+            nickname: data.nickname,
+            autoLogin: data.autoLogin,
+            accessToken: data.accessToken,
+            refreshToken: data.refreshToken,
+          };
+          
+          if(userData.autoLogin){
+            localStorage.setItem("user", JSON.stringify(userData));
+          }
           this.isLoggedIn = true;
-          this.userId = loginData.userId;
+          this.userId = data.nickname;
 
-          this.$store.commit("setUser", data);
+          this.$store.commit("auth/SET_LOGIN", userData);
           this.$emit("close");
           this.$router.push("/");
 
           Swal.fire({
             icon: "success",
             title: "로그인 성공!",
-            text: `${loginData.userId}님 환영합니다`,
+            text: `${data.nickname}님 환영합니다`,
             showConfirmButton: false,
             timer: 1500,
             position: "top-end",
@@ -239,12 +253,10 @@ export default {
         });
 
         if (result.isConfirmed) {
-          localStorage.removeItem("userNickname");
-          localStorage.removeItem("accessToken");
-          localStorage.removeItem("refreshToken");
+          localStorage.removeItem("user");
           this.isLoggedIn = false;
           this.userId = "";
-          this.$store.commit("setUser", null);
+          this.$store.commit("auth/SET_LOGOUT");
           this.$emit("close");
 
           Swal.fire({
@@ -349,13 +361,21 @@ export default {
       }
     },
 
-    async checkAutoLogin() {
+    async checkAutoLogin(userId, accessToken, refreshToken) {
       try {
         const response = await fetch(
-          "http://localhost:8080/users/check-auto-login",
+          "http://localhost:8080/users/checkAutoLogin",
           {
-            method: "GET",
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
             credentials: "include",
+            body: JSON.stringify({
+              userId: userId,
+              accessToken: accessToken,
+              refreshToken: refreshToken,
+            }),
           }
         );
 
@@ -364,7 +384,7 @@ export default {
           if (data.isLoggedIn) {
             this.isLoggedIn = true;
             this.userId = data.userId;
-            this.$store.commit("setUser", data);
+            this.$store.commit("auth/SET_LOGIN", data);
           }
         }
       } catch (error) {
