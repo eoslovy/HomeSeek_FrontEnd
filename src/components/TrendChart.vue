@@ -67,13 +67,13 @@ export default {
           legend: {
             position: 'top',
             labels: {
-              color: '#D4AF37'
+              color: '#333'
             }
           },
           title: {
             display: true,
             text: '지역별 트렌드 비교',
-            color: '#D4AF37',
+            color: '#333',
             font: {
               size: 16
             }
@@ -83,19 +83,30 @@ export default {
           y: {
             beginAtZero: true,
             grid: {
-              color: 'rgba(212, 175, 55, 0.1)'
+              color: 'rgba(0, 0, 0, 0.1)'
             },
             ticks: {
-              color: '#D4AF37'
-            }
+              color: '#333'
+            },
+            backgroundColor: 'white'
           },
           x: {
             grid: {
-              color: 'rgba(212, 175, 55, 0.1)'
+              color: 'rgba(0, 0, 0, 0.1)'
             },
             ticks: {
-              color: '#D4AF37'
-            }
+              color: '#333'
+            },
+            backgroundColor: 'white'
+          }
+        },
+        backgroundColor: 'white',
+        layout: {
+          padding: {
+            left: 0,
+            right: 0,
+            top: 0,
+            bottom: 0
           }
         }
       }
@@ -109,12 +120,12 @@ export default {
   methods: {
     getRandomColor() {
       const colors = [
-        '#FFD700', // 밝은 골드
-        '#00BCD4', // 시안
-        '#2196F3', // 블루
-        '#E91E63', // 핑크
-        '#9C27B0', // 퍼플
-        '#4CAF50'  // 그린
+        '#FF6B6B',
+        '#4ECDC4',
+        '#45B7D1',
+        '#96CEB4',
+        '#D4A5A5',
+        '#9B59B6'
       ];
       
       // 아직 사용하지 않은 색상들만 필터링
@@ -140,9 +151,9 @@ export default {
 .chart-container {
   height: 400px;
   width: 100%;
-  background: rgba(33, 37, 41, 0.95);
+  background: white !important;
   padding: 20px;
   border-radius: 8px;
-  border: 1px solid #D4AF37;
+  border: 1px solid #dee2e6;
 }
 </style> 

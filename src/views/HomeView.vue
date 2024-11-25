@@ -67,7 +67,7 @@
           <div class="history-header">
             <span>거래일</span>
             <span>면적</span>
-            <span>격</span>
+            <span>가격</span>
           </div>
           <div v-for="deal in filteredDeals" :key="deal.id" class="history-item">
             <span>{{ formatDate(deal.dealYear, deal.dealMonth, deal.dealDay) }}</span>
@@ -125,9 +125,7 @@
         <div v-if="isLoading" class="loading">
           분석 중...
         </div>
-        <div v-else class="ai-content">
-          {{ aiAdvice }}
-        </div>
+        <div v-else class="ai-content" v-html="formattedAIAdvice"></div>
       </div>
     </div>
   </transition>
@@ -238,6 +236,18 @@ export default {
         return this.listingData;
       }
       return this.listingData.filter(item => item.excluUseAr === this.selectedListingArea);
+    },
+    formattedAIAdvice() {
+      return this.aiAdvice
+        .replace(/시장 상황/g, '<span style="color: #0a362f; font-weight: bold;">시장 상황</span>')
+        .replace(/최근 실거래 추이/g, '<span style="color: #0a362f; font-weight: bold;">최근 실거래 추이</span>')
+        .replace(/매물 정보/g, '<span style="color: #0a362f; font-weight: bold;">매물 정보</span>')
+        .replace(/종합적으로/g, '<span style="color: #0a362f; font-weight: bold;">종합적으로</span>')
+        .replace(/시세 동향/g, '<span style="color: #0a362f; font-weight: bold;">시세 동향</span>')
+        .replace(/실거래가 정보/g, '<span style="color: #0a362f; font-weight: bold;">실거래가 정보</span>')
+        .replace(/매물가/g, '<span style="color: #0a362f; font-weight: bold;">매물가</span>')
+        .replace(/매수자/g, '<span style="color: #0a362f; font-weight: bold;">매수자</span>')
+        .replace(/현재 시장/g, '<span style="color: #0a362f; font-weight: bold;">현재 시장</span>');
     }
   },
   methods: {
@@ -337,15 +347,19 @@ export default {
         this.listingData = response.data;
         this.showListingModal = true;
       } catch (error) {
-        console.error('매물 정보 조 실패:', error);
+        console.error('매물 정보 조회 실패:', error);
       }
     },
     async getAIAdvice() {
       Swal.fire({
         title: 'AI 분석 중...',
-        html: '심리지수, 실거래가 추이, 매물을 활용하여<br>종합적으로 분석하고 있습니다.',
+        html: '<span style="color: #0a362f; font-weight: bold;">시장 상황</span>, ' + 
+              '<span style="color: #0a362f; font-weight: bold;">최근 실거래 추이</span>, ' +
+              '<span style="color: #0a362f; font-weight: bold;">매물 정보</span>를 활용하여<br>' +
+              '<span style="color: #0a362f; font-weight: bold;">종합적으로</span> 분석하고 있습니다.',
         showConfirmButton: false,
         allowOutsideClick: false,
+        background: 'white',
         didOpen: () => {
           Swal.showLoading();
           const spinner = document.querySelector('.swal2-loading');
@@ -677,10 +691,41 @@ export default {
   overflow-y: auto;
 }
 
+.ai-modal > .modal-header {
+  background-color: #0a362f !important;
+  color: white;
+  padding: 15px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+  border-radius: 8px 8px 0 0;
+}
+
+.ai-modal > .modal-content {
+  background: white !important;
+}
+
+.ai-modal .loading {
+  padding: 40px;
+  text-align: center;
+  font-size: 16px;
+  color: #666;
+  background: white !important;
+}
+
 .ai-content {
   padding: 20px;
   line-height: 1.6;
   white-space: pre-wrap;
+}
+
+/* 키워드 강조를 위한 스타일 추가 */
+.ai-content .highlight {
+  color: #0a362f;
+  font-weight: bold;
 }
 
 .loading {
@@ -688,6 +733,12 @@ export default {
   text-align: center;
   font-size: 16px;
   color: #666;
+  background: white;
+}
+
+.ai-modal .loading {
+  background-color: white !important;
+  border-radius: 0 0 8px 8px;
 }
 
 /* 로딩 스피너 커스텀 스타일 */
@@ -709,6 +760,7 @@ export default {
 
 /* SweetAlert2 커스텀 스타일 */
 .swal2-popup {
+  background: white !important;
   font-size: 1.1em !important;
   padding: 3em !important;
   width: 32em !important;
@@ -738,5 +790,9 @@ export default {
 .swal2-loader {
   width: 180px !important;
   height: 180px !important;
+}
+
+.swal2-container {
+  background-color: rgba(0, 0, 0, 0.4) !important;
 }
 </style>

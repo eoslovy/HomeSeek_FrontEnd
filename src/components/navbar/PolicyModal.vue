@@ -2,7 +2,7 @@
   <div class="modal-overlay" @click.self="$emit('close')">
     <div class="modal-content">
       <div class="modal-header">
-        <h3>부동산 규제 정책</h3>
+        <h4>부동산 규제 정책</h4>
         <button class="close-button" @click="$emit('close')">×</button>
       </div>
       <div class="modal-body">

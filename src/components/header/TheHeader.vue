@@ -3,14 +3,14 @@
     <div class="container-fluid d-flex justify-content-between align-items-center">
       <!-- 왼쪽 영역: 로고와 로그인 아이콘 -->
       <div class="left-section d-flex align-items-center">
-        <router-link class="navbar-brand d-flex align-items-center" to="/">
+        <a class="navbar-brand d-flex align-items-center" href="/" @click.prevent="refreshPage">
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9z" stroke="#D4AF37" stroke-width="2" fill="none"/>
           </svg>
           <span class="brand-text ms-2">
             <span class="home-text">Home</span><span class="seek-text">Seek</span>
           </span>
-        </router-link>
+        </a>
 
         <div class="ms-4 login-icon" @click="showLoginModal = true">
           <i class="bi bi-person-circle"></i>
@@ -86,6 +86,9 @@ export default {
         console.error('검색 중 오류가 발생했습니다:', error);
       }
     },
+    refreshPage() {
+      window.location.href = '/';  // 또는 window.location.reload();
+    }
   },
   watch: {
     // searchKeyword 감시자 추가
