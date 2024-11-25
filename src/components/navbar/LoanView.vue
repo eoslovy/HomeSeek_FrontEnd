@@ -134,7 +134,7 @@
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  padding-top: 70px;
+  padding-top: 80px;
   z-index: 9999;
 }
 
@@ -142,7 +142,7 @@
   background: rgba(33, 37, 41, 0.95);
   width: 600px;
   border-radius: 8px;
-  border: 1px solid #D4AF37;
+  border: none;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
@@ -150,8 +150,9 @@
 
 .modal-header {
   padding: 15px 20px;
-  border-bottom: 1px solid #D4AF37;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   background: #0a362f;
+  border-radius: 8px 8px 0 0;
 }
 
 .header-left {
@@ -161,13 +162,13 @@
 }
 
 .header-left i {
-  color: #D4AF37;
+  color: white;
   cursor: pointer;
   font-size: 1.2rem;
 }
 
 .header-left h3 {
-  color: #D4AF37;
+  color: white;
   margin: 0;
   font-size: 1.2rem;
 }
@@ -531,7 +532,7 @@ export default {
       let remainingPrincipal = P;
       let totalInterest = 0;
       
-      // 첫 달의 납입금으로 초기값 설정
+      // 첫 달 납입금으로 초기값 설정
       const initialMonthlyInterest = P * r;
       this.monthlyPayment = this.formatCurrency(monthlyPrincipal + initialMonthlyInterest);
       

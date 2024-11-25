@@ -219,6 +219,7 @@ export default {
   border: 1px solid #eee;
   border-radius: 4px;
   transition: all 0.2s ease;
+  font-size: 0.95rem;
 }
 
 .region-item:hover {

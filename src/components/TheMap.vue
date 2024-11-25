@@ -14,6 +14,8 @@ let selectedMarker = null;
 let selectedInfowindow = null;
 let clusterer = null;
 let hoveredInfowindow = null;
+let circle500m = null;  // 500m 반경 원
+let circle1km = null;   // 1km 반경 원
 
 export default {
   data() {
@@ -270,16 +272,53 @@ export default {
       try {
         const position = new kakao.maps.LatLng(apt.lat, apt.lng);
         
+        // 기존 마커와 원들 제거
         if(selectedMarker) {
           selectedMarker.setMap(null);
         }
+        if(circle500m) {
+          circle500m.setMap(null);
+        }
+        if(circle1km) {
+          circle1km.setMap(null);
+        }
 
+        // 새 마커 생성
         selectedMarker = new kakao.maps.Marker({
           position: position,
           map: map,
           image: new kakao.maps.MarkerImage('/images/home.svg', new kakao.maps.Size(36, 36))
         });
 
+        // 500m 반경 원 생성
+        circle500m = new kakao.maps.Circle({
+          center: position,
+          radius: 500,
+          strokeWeight: 2,
+          strokeColor: '#0a362f',
+          strokeOpacity: 0.8,
+          strokeStyle: 'solid',
+          fillColor: '#0a362f',
+          fillOpacity: 0.2
+        });
+        
+        // 1km 반경 원 생성
+        circle1km = new kakao.maps.Circle({
+          center: position,
+          radius: 1000,
+          strokeWeight: 2,
+          strokeColor: '#0a362f',
+          strokeOpacity: 0.6,  // 더 투명하게
+          strokeStyle: 'dashed',  // 점선으로
+          fillColor: '#0a362f',
+          fillOpacity: 0.1  // 더 투명하게
+        });
+        
+        // 원들을 지도에 표시
+        circle1km.setMap(map);   // 1km 원을 먼저 그려서 아래에 깔리도록
+        circle500m.setMap(map);  // 500m 원을 나중에 그려서 위에 보이도록
+
+        // 기존 인포윈도우 코드
         if (apt.title) {
           selectedInfowindow = new kakao.maps.InfoWindow({
             content: `
@@ -299,7 +338,7 @@ export default {
         }
 
         map.setCenter(position);
-        map.setLevel(3);
+        map.setLevel(4);  // 레벨을 5로 조정하여 1km 원까지 잘 보이도록 함
       } catch (error) {
         console.error("마커 표시 중 오류 발생:", error);
       }
@@ -429,6 +468,12 @@ export default {
       }
       if (markers.length > 0) {
         markers.forEach(marker => marker.setMap(null));
+      }
+      if(circle500m) {
+        circle500m.setMap(null);
+      }
+      if(circle1km) {
+        circle1km.setMap(null);
       }
       markers = [];
     },
