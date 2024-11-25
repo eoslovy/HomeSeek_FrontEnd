@@ -111,7 +111,7 @@ export default {
 <style scoped>
 .navbar {
   padding: 0.8rem 1rem;
-  background-color: rgba(33, 37, 41, 0.95) !important;
+  background-color: black!important;
 }
 
 .container-fluid {
@@ -177,23 +177,22 @@ export default {
   width: 100%;
   height: 42px;
   line-height: 42px;
-  background: rgba(33, 37, 41, 0.95) !important;
-  border: 1px solid #D4AF37;
+  background: black !important;
+  border: 2px solid #D4AF37;
   border-radius: 4px;
   color: #D4AF37;
   padding: 0 40px 0 12px;
 }
 
 .search-input:focus {
-  background: rgba(33, 37, 41, 0.95) !important;
+  background: black !important;
   border-color: #D4AF37;
-  box-shadow: 0 0 0 0.2rem rgba(212, 175, 55, 0.25);
   border-radius: 4px 4px 0 0;
   outline: none;
 }
 
 .search-input::placeholder {
-  color: rgba(212, 175, 55, 0.8);
+  color: #D4AF37;
   font-weight: 500;
 }
 
@@ -203,7 +202,7 @@ export default {
   top: 50%;
   transform: translateY(-50%);
   color: #D4AF37;
-  font-size: 16px;
+  font-size: 20px;
   cursor: pointer;
 }
 
@@ -212,8 +211,8 @@ export default {
   top: 100%;
   left: 0;
   right: 0;
-  background: rgba(33, 37, 41, 0.95);
-  border: 1px solid #D4AF37;
+  background: black;
+  border: 2px solid #D4AF37;
   border-top: none;
   border-radius: 0 0 4px 4px;
   max-height: 400px;
@@ -239,7 +238,7 @@ export default {
 }
 
 .search-results::-webkit-scrollbar-track {
-  background: rgba(33, 37, 41, 0.95);
+  background: black;
 }
 
 .search-results::-webkit-scrollbar-thumb {
@@ -262,7 +261,7 @@ export default {
   height: 42px;
   padding: 0 15px;
   background: transparent;
-  border: 1px solid #D4AF37;
+  border: 2px solid #D4AF37;
   border-radius: 4px;
   color: #D4AF37;
   display: flex;

@@ -154,7 +154,7 @@ export default {
       let imageSrc;
       switch(type) {
         case 'hospital':
-          imageSrc = '/images/hospital.svg';
+          imageSrc = '/images/hospital.png';
           break;
         case 'market':
           imageSrc = '/images/supermarket.svg';
@@ -163,7 +163,7 @@ export default {
           imageSrc = '/images/subway.svg';
           break;
         case 'school':
-          imageSrc = '/images/school.svg';
+          imageSrc = '/images/school.png';
           break;
       }
       
