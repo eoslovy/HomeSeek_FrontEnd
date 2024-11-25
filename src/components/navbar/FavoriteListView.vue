@@ -217,16 +217,22 @@ export default {
 .compare-btn {
   margin-left: auto;
   padding: 8px 16px;
-  background: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background-color: #4CAF50;
+  border: none;
   border-radius: 4px;
   color: white;
   cursor: pointer;
   transition: all 0.2s ease;
+  font-size: 14px;
 }
 
 .compare-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background-color: #45a049;
+  transform: translateY(-1px);
+}
+
+.compare-btn:active {
+  transform: translateY(0);
 }
 
 .favorite-content {

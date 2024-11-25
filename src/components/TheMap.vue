@@ -6,6 +6,7 @@
 
 <script>
 import axios from 'axios';
+import { showFacilityInfo, createMarkerImage } from '@/utils/mapUtils';
 
 // 전역 변수로 선언
 let map = null;
@@ -100,18 +101,17 @@ export default {
 
     // 시설 마커 생성 메서드
     createFacilityMarkers(facilities, type) {
-      const markerImage = this.createMarkerImage(type);
-      const facilityMarkers = [];  // 마커 배열 추가
+      const facilityMarkers = [];
       
       facilities.forEach(facility => {
         const marker = new kakao.maps.Marker({
           position: new kakao.maps.LatLng(facility.latitude, facility.longitude),
-          image: markerImage
+          image: createMarkerImage(type)
         });
 
         // InfoWindow 미리 생성
         const infowindow = new kakao.maps.InfoWindow({
-          content: this.showFacilityInfo(facility, type),
+          content: showFacilityInfo(facility, type),
           removable: false,
           zIndex: 1
         });
@@ -146,144 +146,6 @@ export default {
       facilityMarkers.forEach(marker => {
         marker.setMap(initialLevel <= 5 ? map : null);
       });
-    },
-
-    // 마커 이미지 생성 메서드
-    createMarkerImage(type) {
-      const imageSize = new kakao.maps.Size(36, 36);
-      let imageSrc;
-      switch(type) {
-        case 'hospital':
-          imageSrc = '/images/hospital.svg';
-          break;
-        case 'market':
-          imageSrc = '/images/supermarket.svg';
-          break;
-        case 'subway':
-          imageSrc = '/images/subway.svg';
-          break;
-        case 'school':
-          imageSrc = '/images/school.svg';
-          break;
-      }
-      
-      return new kakao.maps.MarkerImage(imageSrc, imageSize);
-    },
-
-    // 시설 정보창 표시 메서드
-    showFacilityInfo(facility, type) {
-      switch(type) {
-        case 'hospital':
-          return `
-            <div style="
-              padding: 8px;
-              max-width: 200px;
-              word-break: keep-all;
-              word-wrap: break-word;
-              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            ">
-              <div style="
-                font-size: 14px;
-                font-weight: 600;
-                color: #0a362f;
-                margin-bottom: 4px;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-              ">${facility.name}</div>
-              <div style="
-                font-size: 12px;
-                color: #666;
-                line-height: 1.4;
-              ">
-                <p style="margin: 4px 0; word-break: keep-all;">${facility.address}</p>
-                <p style="margin: 4px 0;">병원 분류: ${facility.category || '정보없음'}</p>
-                <p style="margin: 4px 0;">전화번호: ${facility.tel || '정보없음'}</p>
-              </div>
-            </div>
-          `;
-        case 'market':
-          return `
-            <div style="
-              padding: 8px;
-              max-width: 200px;
-              word-break: keep-all;
-              word-wrap: break-word;
-              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            ">
-              <div style="
-                font-size: 14px;
-                font-weight: 600;
-                color: #0a362f;
-                margin-bottom: 4px;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-              ">${facility.name}</div>
-              <div style="
-                font-size: 12px;
-                color: #666;
-                line-height: 1.4;
-              ">
-                <p style="margin: 4px 0; word-break: keep-all;">${facility.address}</p>
-                <p style="margin: 4px 0;">영업 분류: ${facility.category || '정보없음'}</p>
-              </div>
-            </div>
-          `;
-        case 'subway':
-          return `
-            <div style="
-              padding: 8px;
-              max-width: 200px;
-              word-break: keep-all;
-              word-wrap: break-word;
-              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            ">
-              <div style="
-                font-size: 14px;
-                font-weight: 600;
-                color: #0a362f;
-                margin-bottom: 4px;
-              ">${facility.name}역</div>
-              <div style="
-                font-size: 12px;
-                color: #666;
-                line-height: 1.4;
-              ">
-                <p style="margin: 4px 0;">${facility.line}호선</p>
-              </div>
-            </div>
-          `;
-        case 'school':
-        return `
-            <div style="
-              padding: 8px;
-              max-width: 200px;
-              word-break: keep-all;
-              word-wrap: break-word;
-              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            ">
-              <div style="
-                font-size: 14px;
-                font-weight: 600;
-                color: #0a362f;
-                margin-bottom: 4px;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-              ">${facility.name}</div>
-              <div style="
-                font-size: 12px;
-                color: #666;
-                line-height: 1.4;
-              ">
-                <p style="margin: 4px 0;">학교 분류 : ${facility.category || '정보없음'}</p>
-                <p style="margin: 4px 0;">설립 분류 : ${facility.type || '정보없음'}</p>
-                <p style="margin: 4px 0; word-break: keep-all;">주소 : ${facility.address || '정보없음'}</p>
-              </div>
-            </div>
-          `;
-      }
     },
 
     getMap() {
@@ -352,24 +214,45 @@ export default {
         circle1km.setMap(map);   // 1km 원을 먼저 그려서 아래에 깔리도록
         circle500m.setMap(map);  // 500m 원을 나중에 그려서 위에 보이도록
 
-        // 기존 인포윈도우 코드
-        if (apt.title) {
-          selectedInfowindow = new kakao.maps.InfoWindow({
-            content: `
+        // 마커에 마우스 오버/아웃 이벤트 추가
+        const infowindow = new kakao.maps.InfoWindow({
+          content: `
+            <div style="
+              padding: 8px;
+              max-width: 200px;
+              word-break: keep-all;
+              word-wrap: break-word;
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            ">
               <div style="
-                min-width: 140px;
-                font-size: 13px;
+                font-size: 14px;
                 font-weight: 600;
                 color: #0a362f;
-                text-align: center;
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                margin-bottom: 4px;
+              ">${apt.aptName || apt.title}</div>
+              <div style="
+                font-size: 12px;
+                color: #666;
+                line-height: 1.4;
               ">
-                ${apt.title}
+                <p style="margin: 4px 0;">${apt.address || ''}</p>
               </div>
-            `
-          });
-          selectedInfowindow.open(map, selectedMarker);
-        }
+            </div>
+          `
+        });
+
+        kakao.maps.event.addListener(selectedMarker, 'mouseover', function() {
+          if (hoveredInfowindow) {
+            hoveredInfowindow.close();
+          }
+          infowindow.open(map, selectedMarker);
+          hoveredInfowindow = infowindow;
+        });
+
+        kakao.maps.event.addListener(selectedMarker, 'mouseout', function() {
+          infowindow.close();
+          hoveredInfowindow = null;
+        });
 
         map.setCenter(position);
         map.setLevel(4);  // 레벨을 5로 조정하여 1km 원까지 잘 보이도록 함
