@@ -2,8 +2,13 @@
   <div class="news-view">
     <div class="news-header">
       <div class="header-content">
-        <span class="back-icon" @click="$emit('close')">←</span>
-        <span class="header-title">부동산 정책</span>
+        <div class="left-section">
+          <span class="back-icon" @click="$emit('close')">←</span>
+          <span class="header-title">부동산 정책</span>
+        </div>
+        <button class="policy-button" @click="showPolicyModal = true">
+          정부 정책
+        </button>
       </div>
     </div>
     <div class="news-content">
@@ -18,19 +23,31 @@
         </div>
       </div>
     </div>
+
+    <PolicyModal 
+      v-if="showPolicyModal" 
+      :policies="policyData" 
+      @close="showPolicyModal = false"
+    />
   </div>
 </template>
 
 
 <script>
 import axios from 'axios';
+import PolicyModal from './PolicyModal.vue';
 
 export default {
-  name: "NewsView",
+  name: "PolicyView",
+  components: {
+    PolicyModal
+  },
   data() {
     return {
       newsList: [],
-      isLoading: false
+      isLoading: false,
+      showPolicyModal: false,
+      policyData: []
     };
   },
   methods: {
@@ -45,10 +62,19 @@ export default {
       } finally {
         this.isLoading = false;
       }
+    },
+    async fetchPolicyData() {
+      try {
+        const response = await axios.get('http://localhost:8080/api/policies');
+        this.policyData = response.data.policies;
+      } catch (error) {
+        console.error('정책 데이터 로딩 중 오류:', error);
+      }
     }
   },
   created() {
     this.fetchNews();
+    this.fetchPolicyData();
   }
 };
 </script>
@@ -80,6 +106,13 @@ export default {
 }
 
 .header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.left-section {
   display: flex;
   align-items: center;
   gap: 15px;
@@ -178,5 +211,21 @@ export default {
 
 .news-content::-webkit-scrollbar-thumb:hover {
   background: #555;
+}
+
+.policy-button {
+  margin-left: auto;
+  padding: 8px 16px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+}
+
+.policy-button:hover {
+  background-color: rgba(255, 255, 255, 0.2);
 }
 </style>
