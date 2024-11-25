@@ -911,7 +911,7 @@ export default {
 
 .favorite-button:hover {
   color: #ffd700;
-  
+}
 .swal2-container {
   background-color: rgba(0, 0, 0, 0.4) !important;
 }
