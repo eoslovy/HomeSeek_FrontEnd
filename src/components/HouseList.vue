@@ -37,7 +37,6 @@ export default {
   },
   methods: {
     handleHouseClick(house) {
-      console.log('선택된 house 정보:', house);
       
       this.$emit('view-house', {
         lat: house.latitude,
@@ -46,12 +45,12 @@ export default {
       });
 
       const dealInfo = {
+        aptSeq : house.aptSeq,
         aptName: house.aptName,
         si: house.sidoName,
         gu: house.gugunName
       };
       
-      console.log('전송할 dealInfo:', dealInfo);
       this.$emit('select-house', dealInfo);
     },
     getAddress(house) {

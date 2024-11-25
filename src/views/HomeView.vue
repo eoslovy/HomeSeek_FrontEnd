@@ -35,6 +35,14 @@
     <transition name="slide">
       <LoanView v-if="currentNav === 'loan'" @close="closeNav" />
     </transition>
+    <transition name="slide">
+      <FavoriteListView 
+        v-if="currentNav === 'favoritelist'" 
+        @close="closeNav"
+        @view-house="handleViewHouse"
+        @select-house="fetchHouseDeals"
+      />
+    </transition>
 
   <!-- 오른쪽 모달 -->
   <transition name="slide-right">
@@ -42,9 +50,18 @@
       <div class="modal-header">
         <span class="back-icon" @click="closeRightModal">←</span>
         <span class="header-title">{{ selectedHouse.aptName }} 거래정보</span>
-        <button class="listing-button" @click="fetchAndShowListings">
-          매물보기
-        </button>
+        <div class="header-buttons">
+          <button 
+            class="favorite-button" 
+            :class="{ 'active': isFavorite }"
+            @click="toggleFavorite"
+          >
+            <i class="bi" :class="isFavorite ? 'bi-star-fill' : 'bi-star'"></i>
+          </button>
+          <button class="listing-button" @click="fetchAndShowListings">
+            매물보기
+          </button>
+        </div>
       </div>
       <div class="modal-content">
         <div class="area-filter">
@@ -153,6 +170,7 @@ import NavigationBar from "@/components/navbar/NavigationBar.vue";
 import NewsView from "@/components/navbar/NewsView.vue";
 import PolicyView from "@/components/navbar/PolicyView.vue";
 import LoanView from "@/components/navbar/LoanView.vue";
+import FavoriteListView from "@/components/navbar/FavoriteListView.vue";
 import axios from 'axios';
 import Swal from 'sweetalert2';
 
@@ -177,6 +195,7 @@ export default {
     NewsView,
     PolicyView,
     LoanView,
+    FavoriteListView,
     Line
   },
   data() {
@@ -212,12 +231,15 @@ export default {
       selectedListingArea: 'all',
       showAIModal: false,
       isLoading: false,
-      aiAdvice: ''
+      aiAdvice: '',
+      isFavorite: false
     };
   },
   computed: {
     ...mapState({
       houses: (state) => state.house.houses,
+      currentUser: (state) => state.auth.user,
+      isLoggedIn: (state) => state.auth.isLoggedIn
     }),
     uniqueAreas() {
       return [...new Set(this.dealList.map(deal => deal.excluUseAr))].sort((a, b) => a - b);
@@ -327,6 +349,7 @@ export default {
         this.showRightModal = true;
         this.selectedArea = 'all';
         this.updateChartData();
+        await this.checkFavoriteStatus();
       } catch (error) {
         console.error('거래 정보 조회 실패:', error);
       }
@@ -396,6 +419,80 @@ export default {
     },
     closeAIModal() {
       this.showAIModal = false;
+    },
+    async toggleFavorite() {
+      if (!this.isLoggedIn) {
+        Swal.fire({
+          icon: 'warning',
+          title: '로그인이 필요합니다',
+          text: '관심 목록 기능은 로그인 후 이용 가능합니다.',
+          confirmButtonText: '확인',
+          confirmButtonColor: '#0a362f'
+        });
+        return;
+      }
+
+      try {
+        if (this.isFavorite) {
+          await axios.delete('/users/deleteFavorite', {
+            data: {
+              userId: this.currentUser.id,
+              aptSeq: this.selectedHouse.aptSeq
+            }
+          });
+        } else {
+          await axios.post('/users/setFavorite', {
+            userId: this.currentUser.id,
+            aptSeq: this.selectedHouse.aptSeq
+          });
+        }
+
+        this.isFavorite = !this.isFavorite;
+        
+        Swal.fire({
+          icon: 'success',
+          title: this.isFavorite ? '관심 목록에 추가되었습니다' : '관심 목록에서 제거되었습니다',
+          showConfirmButton: false,
+          timer: 1500,
+          position: 'top-end',
+          toast: true
+        });
+      } catch (error) {
+        console.error('관심 목록 처리 실패:', error);
+        Swal.fire({
+          icon: 'error',
+          title: '처리 실패', 
+          text: '관심 목록 처리 중 오류가 발생했습니다.',
+          confirmButtonText: '확인',
+          confirmButtonColor: '#dc3545'
+        });
+      }
+    },
+
+    async checkFavoriteStatus() {
+      if (!this.isLoggedIn) return;
+      
+      try {
+        const response = await axios.get(`/users/getFavorite`, {
+          params: {
+            userId: this.currentUser.id,
+            aptSeq: this.selectedHouse.aptSeq
+          }
+        });
+
+        if(response.data.check){
+          this.isFavorite = true;
+        }else{
+          this.isFavorite = false;
+        }
+      } catch (error) {
+        console.error('관심 목록 상태 확인 실패:', error);
+      }
+    },
+    handleViewHouse(house) {
+      this.selectedHouse = house;
+      this.showRightModal = true;
+      this.$refs.map.showMarker(house);
     }
   }
 };
@@ -792,6 +889,29 @@ export default {
   height: 180px !important;
 }
 
+.header-buttons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.favorite-button {
+  background: none;
+  border: none;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 18px;
+  color: #666;
+  transition: color 0.3s ease;
+}
+
+.favorite-button.active {
+  color: #ffd700;
+}
+
+.favorite-button:hover {
+  color: #ffd700;
+  
 .swal2-container {
   background-color: rgba(0, 0, 0, 0.4) !important;
 }

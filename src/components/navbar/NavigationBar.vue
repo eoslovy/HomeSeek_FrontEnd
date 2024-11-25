@@ -12,7 +12,7 @@
       <i class="bi bi-bank"></i>
       <span>대출</span>
     </div>
-    <div class="nav-item" @click="toggleAnalysis">
+    <div class="nav-item" @click="$emit('nav-change', 'favoritelist')">
       <i class="bi bi-graph-up"></i>
       <span>비교</span>
     </div>
