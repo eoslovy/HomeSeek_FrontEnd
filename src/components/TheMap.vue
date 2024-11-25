@@ -6,6 +6,7 @@
 
 <script>
 import axios from 'axios';
+import { mapState } from 'vuex';
 
 // 전역 변수로 선언
 let map = null;
@@ -31,6 +32,14 @@ export default {
         once: true,
       });
     }
+  },
+
+  computed: {
+    ...mapState({
+      sidoList: state => state.region.sidoList,      // 시도 리스트
+      gugunList: state => state.region.gugunList,    // 구군 리스트
+      dongList: state => state.region.dongList       // 동 리스트
+    })
   },
 
   methods: {
@@ -93,7 +102,7 @@ export default {
         const response = await axios.get(`http://localhost:8080/map/getFacilities/${type}`);
         return response.data;
       } catch (error) {
-        console.error(`${type} 정보 로드 실패:`, error);
+        console.error(`${type} 정보 로드 실:`, error);
         return [];
       }
     },
@@ -378,7 +387,7 @@ export default {
       }
     },
 
-    showMarkers(apartments) {
+    async showMarkers(apartments, selectedLevel) {
       if (!map || !apartments?.length || !window?.kakao?.maps) {
         console.log("조건 체크 실패", { map, apartmentsLength: apartments?.length });
         return;
@@ -386,111 +395,151 @@ export default {
       
       try {
         this.clearMarkers();
-        const cur = map.getCenter();
-        const curLat = cur.getLat();
-        const curLng = cur.getLng();
         
-        // 최대 마커 수를 10000개로 증가
-        const MAX_MARKERS = 10000;
-        
-        // 필터링 최적화 - 청크로 나누어 처리
-        const filteredApts = [];
-        const CHUNK_SIZE = 1000; // 한 번에 처리할 데이터 크기
-
-        for (let i = 0; i < apartments.length && filteredApts.length < MAX_MARKERS; i += CHUNK_SIZE) {
-          const chunk = apartments.slice(i, i + CHUNK_SIZE);
-          
-          chunk.forEach(apt => {
-            if (filteredApts.length >= MAX_MARKERS) return;
-            
-            if (apt?.latitude && 
-                apt?.longitude && 
-                apt?.aptName && 
-                Math.abs(curLat - apt.latitude) < 0.5 && 
-                Math.abs(curLng - apt.longitude) < 0.5) {
-              filteredApts.push(apt);
-            }
-          });
-        }
-
-        // 마커 생성을 청크로 나누어 처리
-        const createMarkers = () => {
-          const markers = [];
-          for (let i = 0; i < filteredApts.length; i += CHUNK_SIZE) {
-            const chunk = filteredApts.slice(i, i + CHUNK_SIZE);
-            const chunkMarkers = chunk.map(apt => {
-              const marker = new kakao.maps.Marker({
-                position: new kakao.maps.LatLng(apt.latitude, apt.longitude),
-                image: new kakao.maps.MarkerImage('/images/home.svg', new kakao.maps.Size(36, 36))
-              });
-              
-              // InfoWindow 생성
-              const infowindow = new kakao.maps.InfoWindow({
-                content: `
-                    <div style="
-                      min-width: 140px;
-                      font-size: 13px;
-                      font-weight: 600;
-                      color: #0a362f;
-                      text-align: center;
-                      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                    ">
-                      ${apt.aptName}
-                    </div>
-                  `,
-                removable: false,
-                zIndex: 1
-              });
-              
-              // 마우스 이벤트 등록
-              kakao.maps.event.addListener(marker, 'mouseover', function() {
-                // 이전 InfoWindow 닫기
-                if (hoveredInfowindow) {
-                  hoveredInfowindow.close();
-                }
-                infowindow.open(map, marker);
-                hoveredInfowindow = infowindow;
-              });
-
-              kakao.maps.event.addListener(marker, 'mouseout', function() {
-                infowindow.close();
-                hoveredInfowindow = null;
-              });
-
-              kakao.maps.event.addListener(marker, 'click', () => {
-                this.$emit('select-house', {
-                  aptName: apt.aptName,
-                  si: apt.si,
-                  gu: apt.gu
-                });
-              });
-
-              marker.aptData = { aptName: apt.aptName };
-              return marker;
+        // dong 레벨일 경우 개별 마커로 표시
+        if (selectedLevel === 'dong') {
+          apartments.forEach(apt => {
+            const marker = new kakao.maps.Marker({
+              position: new kakao.maps.LatLng(apt.latitude, apt.longitude),
+              map: map,
+              title: apt.aptName,
+              image: new kakao.maps.MarkerImage('/images/home.svg', new kakao.maps.Size(36, 36))
             });
-            markers.push(...chunkMarkers);
-          }
-          return markers;
-        };
 
-        markers = createMarkers();
-
-        if (markers.length > 0) {
-          // 마커 일괄 추가 - 청크로 나누어 처리
-          const addMarkersInChunks = (index = 0) => {
-            const chunk = markers.slice(index, index + CHUNK_SIZE);
-            if (chunk.length === 0) return;
-
-            clusterer.addMarkers(chunk);
-
-            if (index + CHUNK_SIZE < markers.length) {
-              requestAnimationFrame(() => {
-                addMarkersInChunks(index + CHUNK_SIZE);
+            // 마커 클릭 이벤트
+            kakao.maps.event.addListener(marker, 'click', () => {
+              this.$emit('cluster-click', { 
+                level: 'detail', 
+                key: apt.aptName, 
+                apartments: [apt] 
               });
-            }
-          };
-          addMarkersInChunks();
+            });
+
+            // 인포윈도우 생성
+            const infowindow = new kakao.maps.InfoWindow({
+              content: `
+                <div style="padding: 10px; text-align: center;">
+                  <div style="font-weight: bold; margin-bottom: 4px;">${apt.aptName}</div>
+                  <div style="font-size: 12px; color: #666;">${apt.dong}</div>
+                </div>
+              `
+            });
+
+            // 마우스 이벤트
+            kakao.maps.event.addListener(marker, 'mouseover', () => infowindow.open(map, marker));
+            kakao.maps.event.addListener(marker, 'mouseout', () => infowindow.close());
+
+            markers.push(marker);
+          });
+          return;
         }
+        
+        // si, gu 레벨일 경우 클러스터링
+        let regionNames = selectedLevel === 'si' ? 
+                         this.gugunList.map(gu => gu.guName) :  // 구군 이름만 추출
+                         this.dongList.map(dong => dong.dongName);  // 동 이름만 추출
+
+        if (!regionNames?.length) {
+          console.log("행정구역 리스트가 비어있습니다.");
+          return;
+        }
+
+        // 하위 행정구역별로 그룹화
+        const groupedApts = {};
+        regionNames.forEach(name => {
+          groupedApts[name] = {
+            apartments: [],
+            center: { lat: 0, lng: 0 },
+            count: 0
+          };
+        });
+
+        // 아파트들을 해당 그룹에 할당
+        apartments.forEach(apt => {
+          const key = selectedLevel === 'si' ? apt.guName : apt.dongName;
+          if (groupedApts[key]) {
+            groupedApts[key].apartments.push(apt);
+            groupedApts[key].center.lat += parseFloat(apt.latitude);
+            groupedApts[key].center.lng += parseFloat(apt.longitude);
+            groupedApts[key].count++;
+          }
+        });
+
+        // 빈 그룹 제거 및 중심점 계산
+        Object.keys(groupedApts).forEach(key => {
+          if (groupedApts[key].count === 0) {
+            delete groupedApts[key];
+          } else {
+            groupedApts[key].center.lat /= groupedApts[key].count;
+            groupedApts[key].center.lng /= groupedApts[key].count;
+          }
+        });
+
+        // 클러스터러 스타일 수정
+        clusterer = new kakao.maps.MarkerClusterer({
+          map: map,
+          averageCenter: true,
+          minLevel: selectedLevel === 'si' ? 8 : selectedLevel === 'gu' ? 6 : 4,
+          gridSize: selectedLevel === 'si' ? 120 : selectedLevel === 'gu' ? 100 : 80,
+          minClusterSize: 1,
+          styles: [{
+            width: '80px',
+            height: '80px',
+            background: 'rgba(10, 54, 47, .8)',
+            color: '#fff',
+            textAlign: 'center',
+            fontWeight: 'bold',
+            fontSize: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: '40px'
+          }],
+          calculator: [1, 10, 30]
+        });
+
+        // 각 그룹별 마커 생성
+        Object.entries(groupedApts).forEach(([key, group]) => {
+          const marker = new kakao.maps.Marker({
+            position: new kakao.maps.LatLng(group.center.lat, group.center.lng),
+            title: key
+          });
+
+          // 클러스터 클릭 이벤트
+          kakao.maps.event.addListener(marker, 'click', () => {
+            const level = selectedLevel === 'si' ? 'gu' : 
+                         selectedLevel === 'gu' ? 'dong' : 'detail';
+            this.$emit('cluster-click', { level, key, apartments: group.apartments });
+          });
+
+          // 커스텀 오버레이 생성
+          const content = `
+            <div style="
+              padding: 10px;
+              background: rgba(10, 54, 47, .8);
+              color: white;
+              border-radius: 5px;
+              font-size: 12px;
+              text-align: center;
+            ">
+              <div>${key}</div>
+              <div>${group.count}개</div>
+            </div>
+          `;
+
+          const overlay = new kakao.maps.CustomOverlay({
+            content: content,
+            position: marker.getPosition(),
+            zIndex: 1
+          });
+
+          // 마커에 마우스 이벤트 추가
+          kakao.maps.event.addListener(marker, 'mouseover', () => overlay.setMap(map));
+          kakao.maps.event.addListener(marker, 'mouseout', () => overlay.setMap(null));
+
+          clusterer.addMarker(marker);
+        });
+
       } catch (error) {
         console.error("마커 표시 중 오류:", error);
       }
