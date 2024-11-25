@@ -102,10 +102,10 @@ export default {
           }
         });
         
-        // 삭제 후 목록 새로고침
         await this.fetchUserFavoriteList();
         
-        // 성공 메시지
+        this.$emit('favorite-deleted', house.aptSeq);
+        
         Swal.fire({
           icon: 'success',
           title: '관심 목록에서 제거되었습니다',
