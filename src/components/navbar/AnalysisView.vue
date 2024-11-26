@@ -625,7 +625,7 @@ export default {
               this.hoveredInfowindow = null;
             }
           }
-        }, 3000);
+        }, 5000);
       }
     },
 
