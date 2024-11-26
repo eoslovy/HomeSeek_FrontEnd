@@ -112,9 +112,9 @@
       <div class="modal-content">
         <div class="area-filter">
           <select v-model="selectedListingArea" class="area-select">
-            <option value="all">전체 면적</option>
+            <option value="all">전체 면적 ({{ listingData.length }}개)</option>
             <option v-for="area in uniqueListingAreas" :key="area" :value="area">
-              {{ area }}㎡
+              {{ area }}㎡ ({{ getListingCountByArea(area) }}개)
             </option>
           </select>
         </div>
@@ -523,6 +523,9 @@ export default {
           this.$refs.analysisView.showApartment(2, houses[1]);
         }
       });
+    },
+    getListingCountByArea(area) {
+      return this.listingData.filter(item => item.excluUseAr === area).length;
     }
   }
 };
