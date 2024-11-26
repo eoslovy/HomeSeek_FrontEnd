@@ -7,6 +7,7 @@
 <script>
 import axios from "axios";
 import { mapState } from "vuex";
+import { showFacilityInfo, createMarkerImage } from '@/utils/mapUtils';
 
 // 전역 변수로 선언
 let map = null;
@@ -110,21 +111,17 @@ export default {
 
     // 시설 마커 생성 메서드
     createFacilityMarkers(facilities, type) {
-      const markerImage = this.createMarkerImage(type);
-      const facilityMarkers = []; // 마커 배열 추가
-
-      facilities.forEach((facility) => {
+      const facilityMarkers = [];
+      
+      facilities.forEach(facility => {
         const marker = new kakao.maps.Marker({
-          position: new kakao.maps.LatLng(
-            facility.latitude,
-            facility.longitude
-          ),
-          image: markerImage,
+          position: new kakao.maps.LatLng(facility.latitude, facility.longitude),
+          image: createMarkerImage(type)
         });
 
         // InfoWindow 미리 생성
         const infowindow = new kakao.maps.InfoWindow({
-          content: this.showFacilityInfo(facility, type),
+          content: showFacilityInfo(facility, type),
           removable: false,
           zIndex: 1,
         });
@@ -160,7 +157,6 @@ export default {
         marker.setMap(initialLevel <= 5 ? map : null);
       });
     },
-
     // 마커 이미지 생성 메서드
     createMarkerImage(type) {
       const imageSize = new kakao.maps.Size(36, 36);
@@ -314,7 +310,6 @@ export default {
           `;
       }
     },
-
     getMap() {
       return map;
     },
@@ -335,16 +330,7 @@ export default {
       try {
         const position = new kakao.maps.LatLng(apt.lat, apt.lng);
 
-        // 기존 마커와 원들 제거
-        if (selectedMarker) {
-          selectedMarker.setMap(null);
-        }
-        if (circle500m) {
-          circle500m.setMap(null);
-        }
-        if (circle1km) {
-          circle1km.setMap(null);
-        }
+        this.clearMarkers();
 
         // 새 마커 생성
         selectedMarker = new kakao.maps.Marker({
@@ -384,27 +370,49 @@ export default {
         circle1km.setMap(map); // 1km 원을 먼저 그려서 아래에 깔리도록
         circle500m.setMap(map); // 500m 원을 나중에 그려서 위에 보이도록
 
-        // 기존 인포윈도우 코드
-        if (apt.title) {
-          selectedInfowindow = new kakao.maps.InfoWindow({
-            content: `
+        // 마커에 마우스 오버/아웃 이벤트 추가
+        const infowindow = new kakao.maps.InfoWindow({
+          content: `
+            <div style="
+              padding: 8px;
+              max-width: 200px;
+              word-break: keep-all;
+              word-wrap: break-word;
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            ">
               <div style="
-                min-width: 140px;
-                font-size: 13px;
+                font-size: 14px;
                 font-weight: 600;
                 color: #0a362f;
-                text-align: center;
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                margin-bottom: 4px;
+              ">${apt.aptName || apt.title}</div>
+              <div style="
+                font-size: 12px;
+                color: #666;
+                line-height: 1.4;
               ">
-                ${apt.title}
+                <p style="margin: 4px 0;">${apt.address || ''}</p>
               </div>
             `,
           });
-          selectedInfowindow.open(map, selectedMarker);
-        }
+        selectedInfowindow.open(map, selectedMarker);
+      
+
+        kakao.maps.event.addListener(selectedMarker, 'mouseover', function() {
+          if (hoveredInfowindow) {
+            hoveredInfowindow.close();
+          }
+          infowindow.open(map, selectedMarker);
+          hoveredInfowindow = infowindow;
+        });
+
+        kakao.maps.event.addListener(selectedMarker, 'mouseout', function() {
+          infowindow.close();
+          hoveredInfowindow = null
+        });
 
         map.setCenter(position);
-        map.setLevel(4); // 레벨을 5로 조정하여 1km 원까지 잘 보이도록 함
+        map.setLevel(4); 
       } catch (error) {
         console.error("마커 표시 중 오류 발생:", error);
       }

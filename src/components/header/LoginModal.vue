@@ -7,7 +7,7 @@
       </div>
 
       <div v-if="isLoggedIn" class="logged-in-content">
-        <p>{{ userId }}님 환영합니다</p>
+        <h4>{{ userId }}님 환영합니다</h4>
         <button @click="handleLogout" class="logout-btn">로그아웃</button>
       </div>
 
@@ -413,8 +413,22 @@ export default {
 .modal-content {
   background: white;
   width: 400px;
-  border-radius: 12px;
+  border-radius: 15px;
   padding: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  animation: modalSlideDown 0.3s ease-out;
+}
+
+/* 모달 슬라이드 다운 애니메이션 */
+@keyframes modalSlideDown {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .modal-header {
@@ -422,11 +436,14 @@ export default {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #eee;
 }
 
 .modal-header h2 {
   font-size: 24px;
   font-weight: 600;
+  color: #0a362f;
 }
 
 .close-btn {
@@ -435,6 +452,21 @@ export default {
   font-size: 24px;
   cursor: pointer;
   color: #666;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.close-btn:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.close-btn::before {
+  content: "×";
 }
 
 .login-options {
