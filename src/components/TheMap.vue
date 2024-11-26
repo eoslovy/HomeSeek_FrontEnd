@@ -342,7 +342,7 @@ export default {
           ),
         });
 
-        // 500m 반경 원 생성
+        // 500m와 1km 반경 원 생성 및 표시
         circle500m = new kakao.maps.Circle({
           center: position,
           radius: 500,
@@ -354,24 +354,22 @@ export default {
           fillOpacity: 0.2,
         });
 
-        // 1km 반경 원 생성
         circle1km = new kakao.maps.Circle({
           center: position,
           radius: 1000,
           strokeWeight: 2,
           strokeColor: "#0a362f",
-          strokeOpacity: 0.6, // 더 투명하게
-          strokeStyle: "dashed", // 점선으로
+          strokeOpacity: 0.6,
+          strokeStyle: "dashed",
           fillColor: "#0a362f",
-          fillOpacity: 0.1, // 더 투명하게
+          fillOpacity: 0.1,
         });
 
-        // 원들을 지도에 표시
-        circle1km.setMap(map); // 1km 원을 먼저 그려서 아래에 깔리도록
-        circle500m.setMap(map); // 500m 원을 나중에 그려서 위에 보이도록
+        circle1km.setMap(map);
+        circle500m.setMap(map);
 
-        // 마커에 마우스 오버/아웃 이벤트 추가
-        const infowindow = new kakao.maps.InfoWindow({
+        // 정보창 생성
+        selectedInfowindow = new kakao.maps.InfoWindow({
           content: `
             <div style="
               padding: 8px;
@@ -393,26 +391,19 @@ export default {
               ">
                 <p style="margin: 4px 0;">${apt.address || ''}</p>
               </div>
-            `,
-          });
-        selectedInfowindow.open(map, selectedMarker);
-      
-
-        kakao.maps.event.addListener(selectedMarker, 'mouseover', function() {
-          if (hoveredInfowindow) {
-            hoveredInfowindow.close();
-          }
-          infowindow.open(map, selectedMarker);
-          hoveredInfowindow = infowindow;
+            </div>
+          `
         });
 
-        kakao.maps.event.addListener(selectedMarker, 'mouseout', function() {
-          infowindow.close();
-          hoveredInfowindow = null
-        });
+        // 정보창이 생성된 후에 열기
+        if (selectedInfowindow && selectedMarker) {
+          selectedInfowindow.open(map, selectedMarker);
+        }
 
+        // 지도 중심 이동 및 레벨 설정
         map.setCenter(position);
-        map.setLevel(4); 
+        map.setLevel(4);
+
       } catch (error) {
         console.error("마커 표시 중 오류 발생:", error);
       }
