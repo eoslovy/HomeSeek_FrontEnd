@@ -23,6 +23,10 @@
           <i class="bi bi-graph-up"></i>
           실시간 트렌드
         </button>
+        <button class="trend-button" @click="openSentimentModal">
+          <i class="bi bi-clipboard-data"></i>
+          시장 지수
+        </button>
         <input
           v-model="searchKeyword"
           type="text"
@@ -43,6 +47,11 @@
 
       <LoginModal :show="showLoginModal" @close="showLoginModal = false" />
       <TrendModal :show="showTrendModal" @close="showTrendModal = false" />
+      <SentimentModal 
+        :show="showSentimentModal" 
+        :sentiment-data="sentimentData"
+        @close="showSentimentModal = false" 
+      />
     </div>
   </nav>
 </template>
@@ -50,6 +59,7 @@
 <script>
 import LoginModal from "./LoginModal.vue";
 import TrendModal from "./TrendModal.vue";
+import SentimentModal from "./SentimentModal.vue";
 import axios from 'axios';
 
 export default {
@@ -57,6 +67,7 @@ export default {
   components: {
     LoginModal,
     TrendModal,
+    SentimentModal,
   },
   data() {
     return {
@@ -65,6 +76,8 @@ export default {
       isLoggedIn: false,
       searchKeyword: '',
       searchResult: null,
+      showSentimentModal: false,
+      sentimentData: '',
     };
   },
   methods: {
@@ -88,7 +101,18 @@ export default {
     },
     refreshPage() {
       window.location.href = '/';  // 또는 window.location.reload();
-    }
+    },
+    async openSentimentModal() {
+      this.showSentimentModal = true;
+      this.sentimentData = '';
+      
+      try {
+        const response = await axios.get('http://localhost:8080/openai/sentiment');
+        this.sentimentData = response.data;
+      } catch (error) {
+        console.error('시장 심리 지수를 불러오는 중 오류가 발생했습니다:', error);
+      }
+    },
   },
   watch: {
     // searchKeyword 감시자 추가
@@ -111,7 +135,7 @@ export default {
 <style scoped>
 .navbar {
   padding: 0.8rem 1rem;
-  background-color: black!important;
+  background-color: rgba(28, 32, 36, 0.95) !important;
 }
 
 .container-fluid {
@@ -166,7 +190,7 @@ export default {
 
 .right-section {
   position: relative;
-  width: 500px;
+  width: 600px;
   height: 42px;
   display: flex;
   align-items: center;
@@ -177,7 +201,7 @@ export default {
   width: 100%;
   height: 42px;
   line-height: 42px;
-  background: black !important;
+  background: rgba(28, 32, 36, 0.95) !important;
   border: 2px solid #D4AF37;
   border-radius: 4px;
   color: #D4AF37;
@@ -211,7 +235,7 @@ export default {
   top: 100%;
   left: 0;
   right: 0;
-  background: black;
+  background: rgba(28, 32, 36, 0.95);
   border: 2px solid #D4AF37;
   border-top: none;
   border-radius: 0 0 4px 4px;
@@ -238,7 +262,7 @@ export default {
 }
 
 .search-results::-webkit-scrollbar-track {
-  background: black;
+  background: rgba(28, 32, 36, 0.95);
 }
 
 .search-results::-webkit-scrollbar-thumb {
@@ -270,6 +294,7 @@ export default {
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
+  min-width: 120px;
 }
 
 .trend-button:hover {
