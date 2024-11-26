@@ -36,14 +36,15 @@ export default {
         this.selectedSido = sido;
         this.selectedGugun = null;
         this.selectedDong = null;
-        await this.fetchGugunList(sido.name);
+        
+        await this.fetchGugunList(sido.siName);
 
-        const response = await houseApi.searchByToggleWithSi(sido.code);
+        const response = await houseApi.searchByToggleWithSi(sido.dongCode);
           
         const mapRef = this.$parent.$refs.map;
         if (mapRef) {
-          mapRef.setMapOptions(9, sido.latitude, sido.longitude);
-          mapRef.showMarkers(response.data);
+          mapRef.setMapOptions(8, sido.latitude, sido.longitude);
+          mapRef.showMarkers(response.data, 'si');
         }
       } catch (error) {
         console.error('시도 선택 중 오류 발생:', error);
@@ -52,17 +53,19 @@ export default {
     async selectGugun(gugun) {
       try {
         this.selectedGugun = gugun;
+        this.selectedDong = null;
+        
         await this.fetchDongList({
-          si: this.selectedSido.name,
-          gu: gugun.name,
+          si: this.selectedSido.siName,
+          gu: gugun.guName,
         });
 
-        const response = await houseApi.searchByToggleWithGu(gugun.code);
+        const response = await houseApi.searchByToggleWithGu(gugun.dongCode);
           
         const mapRef = this.$parent.$refs.map;
         if (mapRef) {
           mapRef.setMapOptions(6, gugun.latitude, gugun.longitude);
-          mapRef.showMarkers(response.data);
+          mapRef.showMarkers(response.data, 'gu');
         }
       } catch (error) {
         console.error('구/군 선택 중 오류:', error);
@@ -72,17 +75,17 @@ export default {
       this.selectedDong = dong;
       this.$store.commit("region/setDongList", []);
       this.$emit("select-region", {
-        sido: this.selectedSido,
-        gugun: this.selectedGugun,
-        dong: dong
+        sido: this.selectedSido.siName,
+        gugun: this.selectedGugun.guName,
+        dong: dong.dongName
       });
 
-      const response = await houseApi.searchByToggleWithDong(dong.code);
+        const response = await houseApi.searchByToggleWithDong(dong.dongCode);
           
         const mapRef = this.$parent.$refs.map;
         if (mapRef) {
-          mapRef.setMapOptions(6, dong.latitude, dong.longitude);
-          mapRef.showMarkers(response.data);
+          mapRef.setMapOptions(4, dong.latitude, dong.longitude);
+          mapRef.showMarkers(response.data, 'dong');
         }
     },
     backToSido() {
@@ -127,18 +130,18 @@ export default {
     <!-- 상단 네비게이션 -->
     <div class="region-navigation">
       <span class="nav-item" @click="backToSido">
-        {{ selectedSido ? selectedSido.name : "지역을 선택해주세요" }}
+        {{ selectedSido ? selectedSido.siName : "지역을 선택해주세요" }}
       </span>
       <span v-if="selectedGugun">
         >
         <span class="nav-item" @click="backToGugun">
-          {{ selectedGugun.name }}
+          {{ selectedGugun.guName }}
         </span>
       </span>
       <span v-if="selectedDong">
         >
         <span class="nav-item" @click="backToDong">
-          {{ selectedDong.name }}
+          {{ selectedDong.dongName }}
         </span>
       </span>
     </div>
@@ -147,11 +150,11 @@ export default {
     <div v-if="!selectedSido" class="region-grid">
       <div
         v-for="sido in sidoList"
-        :key="sido.code"
+        :key="sido.dongCode"
         class="region-item"
         @click="selectSido(sido)"
       >
-        {{ sido.name }}
+        {{ sido.siName }}
       </div>
     </div>
 
@@ -159,11 +162,11 @@ export default {
     <div v-else-if="!selectedGugun" class="region-grid">
       <div
         v-for="gugun in gugunList"
-        :key="gugun.code"
+        :key="gugun.dongCode"
         class="region-item"
         @click="selectGugun(gugun)"
       >
-        {{ gugun.name }}
+        {{ gugun.guName }}
       </div>
     </div>
 
@@ -171,11 +174,11 @@ export default {
     <div v-else class="region-grid">
       <div
         v-for="dong in dongList"
-        :key="dong.code"
+        :key="dong.dongCode"
         class="region-item"
         @click="selectDong(dong)"
       >
-        {{ dong.name }}
+        {{ dong.dongName }}
       </div>
     </div>
   </div>

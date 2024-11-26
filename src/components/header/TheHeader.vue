@@ -209,9 +209,8 @@ export default {
 }
 
 .search-input:focus {
-  background: rgba(33, 37, 41, 0.95) !important;
+  background: black !important;
   border-color: #D4AF37;
-  box-shadow: 0 0 0 0.2rem rgba(212, 175, 55, 0.25);
   border-radius: 4px 4px 0 0;
   outline: none;
 }
@@ -227,7 +226,7 @@ export default {
   top: 50%;
   transform: translateY(-50%);
   color: #D4AF37;
-  font-size: 16px;
+  font-size: 20px;
   cursor: pointer;
 }
 

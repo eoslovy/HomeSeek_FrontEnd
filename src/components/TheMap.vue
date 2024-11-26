@@ -5,7 +5,8 @@
 </template>
 
 <script>
-import axios from 'axios';
+import axios from "axios";
+import { mapState } from "vuex";
 import { showFacilityInfo, createMarkerImage } from '@/utils/mapUtils';
 
 // 전역 변수로 선언
@@ -15,14 +16,14 @@ let selectedMarker = null;
 let selectedInfowindow = null;
 let clusterer = null;
 let hoveredInfowindow = null;
-let circle500m = null;  // 500m 반경 원
-let circle1km = null;   // 1km 반경 원
+let circle500m = null; // 500m 반경 원
+let circle1km = null; // 1km 반경 원
 
 export default {
   data() {
     return {
-      map: null  // 컴포넌트 내부 상태로도 저장
-    }
+      map: null, // 컴포넌트 내부 상태로도 저장
+    };
   },
   mounted() {
     if (window?.kakaoMapsLoaded) {
@@ -32,6 +33,14 @@ export default {
         once: true,
       });
     }
+  },
+
+  computed: {
+    ...mapState({
+      sidoList: (state) => state.region.sidoList, // 시도 리스트
+      gugunList: (state) => state.region.gugunList, // 구군 리스트
+      dongList: (state) => state.region.dongList, // 동 리스트
+    }),
   },
 
   methods: {
@@ -71,18 +80,17 @@ export default {
 
         // 주변 시설 정보 동시에 요청
         const [hospitals, markets, subways, schools] = await Promise.all([
-          this.fetchNearbyFacilities('hospitals'),
-          this.fetchNearbyFacilities('markets'),
-          this.fetchNearbyFacilities('subways'),
-          this.fetchNearbyFacilities('schools')
+          this.fetchNearbyFacilities("hospitals"),
+          this.fetchNearbyFacilities("markets"),
+          this.fetchNearbyFacilities("subways"),
+          this.fetchNearbyFacilities("schools"),
         ]);
 
         // 각 시설 유형별 마커 생성 및 표시
-        this.createFacilityMarkers(hospitals, 'hospital');
-        this.createFacilityMarkers(markets, 'market');
-        this.createFacilityMarkers(subways, 'subway');
-        this.createFacilityMarkers(schools, 'school');
-
+        this.createFacilityMarkers(hospitals, "hospital");
+        this.createFacilityMarkers(markets, "market");
+        this.createFacilityMarkers(subways, "subway");
+        this.createFacilityMarkers(schools, "school");
       } catch (error) {
         console.error("카카오맵 초기화 중 오류:", error);
       }
@@ -91,10 +99,12 @@ export default {
     // 주변 시설 정보 요청 메서드
     async fetchNearbyFacilities(type) {
       try {
-        const response = await axios.get(`http://localhost:8080/map/getFacilities/${type}`);
+        const response = await axios.get(
+          `http://localhost:8080/map/getFacilities/${type}`
+        );
         return response.data;
       } catch (error) {
-        console.error(`${type} 정보 로드 실패:`, error);
+        console.error(`${type} 정보 로드 실:`, error);
         return [];
       }
     },
@@ -113,11 +123,11 @@ export default {
         const infowindow = new kakao.maps.InfoWindow({
           content: showFacilityInfo(facility, type),
           removable: false,
-          zIndex: 1
+          zIndex: 1,
         });
 
         // 마우스 이벤트 등록
-        kakao.maps.event.addListener(marker, 'mouseover', () => {
+        kakao.maps.event.addListener(marker, "mouseover", () => {
           if (hoveredInfowindow) {
             hoveredInfowindow.close();
           }
@@ -125,7 +135,7 @@ export default {
           hoveredInfowindow = infowindow;
         });
 
-        kakao.maps.event.addListener(marker, 'mouseout', () => {
+        kakao.maps.event.addListener(marker, "mouseout", () => {
           infowindow.close();
           hoveredInfowindow = null;
         });
@@ -134,20 +144,172 @@ export default {
       });
 
       // 지도 레벨 변경 이벤트 리스너
-      kakao.maps.event.addListener(map, 'zoom_changed', () => {
+      kakao.maps.event.addListener(map, "zoom_changed", () => {
         const level = map.getLevel();
-        facilityMarkers.forEach(marker => {
+        facilityMarkers.forEach((marker) => {
           marker.setMap(level <= 5 ? map : null);
         });
       });
 
       // 초기 레벨에 따라 마커 표시 여부 설정
       const initialLevel = map.getLevel();
-      facilityMarkers.forEach(marker => {
+      facilityMarkers.forEach((marker) => {
         marker.setMap(initialLevel <= 5 ? map : null);
       });
     },
+    // 마커 이미지 생성 메서드
+    createMarkerImage(type) {
+      const imageSize = new kakao.maps.Size(36, 36);
+      let imageSrc;
+      switch (type) {
+        case "hospital":
+          imageSrc = "/images/hospital.png";
+          break;
+        case "market":
+          imageSrc = "/images/supermarket.svg";
+          break;
+        case "subway":
+          imageSrc = "/images/subway.svg";
+          break;
+        case "school":
+          imageSrc = "/images/school.png";
+          break;
+      }
 
+      return new kakao.maps.MarkerImage(imageSrc, imageSize);
+    },
+
+    // 시설 정보창 표시 메서드
+    showFacilityInfo(facility, type) {
+      switch (type) {
+        case "hospital":
+          return `
+            <div style="
+              padding: 8px;
+              max-width: 200px;
+              word-break: keep-all;
+              word-wrap: break-word;
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            ">
+              <div style="
+                font-size: 14px;
+                font-weight: 600;
+                color: #0a362f;
+                margin-bottom: 4px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+              ">${facility.name}</div>
+              <div style="
+                font-size: 12px;
+                color: #666;
+                line-height: 1.4;
+              ">
+                <p style="margin: 4px 0; word-break: keep-all;">${
+                  facility.address
+                }</p>
+                <p style="margin: 4px 0;">병원 분류: ${
+                  facility.category || "정보없음"
+                }</p>
+                <p style="margin: 4px 0;">전화번호: ${
+                  facility.tel || "정보없음"
+                }</p>
+              </div>
+            </div>
+          `;
+        case "market":
+          return `
+            <div style="
+              padding: 8px;
+              max-width: 200px;
+              word-break: keep-all;
+              word-wrap: break-word;
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            ">
+              <div style="
+                font-size: 14px;
+                font-weight: 600;
+                color: #0a362f;
+                margin-bottom: 4px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+              ">${facility.name}</div>
+              <div style="
+                font-size: 12px;
+                color: #666;
+                line-height: 1.4;
+              ">
+                <p style="margin: 4px 0; word-break: keep-all;">${
+                  facility.address
+                }</p>
+                <p style="margin: 4px 0;">영업 분류: ${
+                  facility.category || "정보없음"
+                }</p>
+              </div>
+            </div>
+          `;
+        case "subway":
+          return `
+            <div style="
+              padding: 8px;
+              max-width: 200px;
+              word-break: keep-all;
+              word-wrap: break-word;
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            ">
+              <div style="
+                font-size: 14px;
+                font-weight: 600;
+                color: #0a362f;
+                margin-bottom: 4px;
+              ">${facility.name}역</div>
+              <div style="
+                font-size: 12px;
+                color: #666;
+                line-height: 1.4;
+              ">
+                <p style="margin: 4px 0;">${facility.line}호선</p>
+              </div>
+            </div>
+          `;
+        case "school":
+          return `
+            <div style="
+              padding: 8px;
+              max-width: 200px;
+              word-break: keep-all;
+              word-wrap: break-word;
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            ">
+              <div style="
+                font-size: 14px;
+                font-weight: 600;
+                color: #0a362f;
+                margin-bottom: 4px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+              ">${facility.name}</div>
+              <div style="
+                font-size: 12px;
+                color: #666;
+                line-height: 1.4;
+              ">
+                <p style="margin: 4px 0;">학교 분류 : ${
+                  facility.category || "정보없음"
+                }</p>
+                <p style="margin: 4px 0;">설립 분류 : ${
+                  facility.type || "정보없음"
+                }</p>
+                <p style="margin: 4px 0; word-break: keep-all;">주소 : ${
+                  facility.address || "정보없음"
+                }</p>
+              </div>
+            </div>
+          `;
+      }
+    },
     getMap() {
       return map;
     },
@@ -167,23 +329,17 @@ export default {
 
       try {
         const position = new kakao.maps.LatLng(apt.lat, apt.lng);
-        
-        // 기존 마커와 원들 제거
-        if(selectedMarker) {
-          selectedMarker.setMap(null);
-        }
-        if(circle500m) {
-          circle500m.setMap(null);
-        }
-        if(circle1km) {
-          circle1km.setMap(null);
-        }
+
+        this.clearMarkers();
 
         // 새 마커 생성
         selectedMarker = new kakao.maps.Marker({
           position: position,
           map: map,
-          image: new kakao.maps.MarkerImage('/images/home.svg', new kakao.maps.Size(36, 36))
+          image: new kakao.maps.MarkerImage(
+            "/images/home.svg",
+            new kakao.maps.Size(36, 36)
+          ),
         });
 
         // 500m 반경 원 생성
@@ -191,28 +347,28 @@ export default {
           center: position,
           radius: 500,
           strokeWeight: 2,
-          strokeColor: '#0a362f',
+          strokeColor: "#0a362f",
           strokeOpacity: 0.8,
-          strokeStyle: 'solid',
-          fillColor: '#0a362f',
-          fillOpacity: 0.2
+          strokeStyle: "solid",
+          fillColor: "#0a362f",
+          fillOpacity: 0.2,
         });
-        
+
         // 1km 반경 원 생성
         circle1km = new kakao.maps.Circle({
           center: position,
           radius: 1000,
           strokeWeight: 2,
-          strokeColor: '#0a362f',
-          strokeOpacity: 0.6,  // 더 투명하게
-          strokeStyle: 'dashed',  // 점선으로
-          fillColor: '#0a362f',
-          fillOpacity: 0.1  // 더 투명하게
+          strokeColor: "#0a362f",
+          strokeOpacity: 0.6, // 더 투명하게
+          strokeStyle: "dashed", // 점선으로
+          fillColor: "#0a362f",
+          fillOpacity: 0.1, // 더 투명하게
         });
-        
+
         // 원들을 지도에 표시
-        circle1km.setMap(map);   // 1km 원을 먼저 그려서 아래에 깔리도록
-        circle500m.setMap(map);  // 500m 원을 나중에 그려서 위에 보이도록
+        circle1km.setMap(map); // 1km 원을 먼저 그려서 아래에 깔리도록
+        circle500m.setMap(map); // 500m 원을 나중에 그려서 위에 보이도록
 
         // 마커에 마우스 오버/아웃 이벤트 추가
         const infowindow = new kakao.maps.InfoWindow({
@@ -237,9 +393,10 @@ export default {
               ">
                 <p style="margin: 4px 0;">${apt.address || ''}</p>
               </div>
-            </div>
-          `
-        });
+            `,
+          });
+        selectedInfowindow.open(map, selectedMarker);
+      
 
         kakao.maps.event.addListener(selectedMarker, 'mouseover', function() {
           if (hoveredInfowindow) {
@@ -251,129 +408,172 @@ export default {
 
         kakao.maps.event.addListener(selectedMarker, 'mouseout', function() {
           infowindow.close();
-          hoveredInfowindow = null;
+          hoveredInfowindow = null
         });
 
         map.setCenter(position);
-        map.setLevel(4);  // 레벨을 5로 조정하여 1km 원까지 잘 보이도록 함
+        map.setLevel(4); 
       } catch (error) {
         console.error("마커 표시 중 오류 발생:", error);
       }
     },
 
-    showMarkers(apartments) {
+    async showMarkers(apartments, selectedLevel) {
+      this.clearMarkers();
       if (!map || !apartments?.length || !window?.kakao?.maps) {
-        console.log("조건 체크 실패", { map, apartmentsLength: apartments?.length });
+        console.log("조건 체크 실패", {
+          map,
+          apartmentsLength: apartments?.length,
+        });
         return;
       }
-      
+
       try {
-        this.clearMarkers();
-        const cur = map.getCenter();
-        const curLat = cur.getLat();
-        const curLng = cur.getLng();
-        
-        // 최대 마커 수를 10000개로 증가
-        const MAX_MARKERS = 10000;
-        
-        // 필터링 최적화 - 청크로 나누어 처리
-        const filteredApts = [];
-        const CHUNK_SIZE = 1000; // 한 번에 처리할 데이터 크기
-
-        for (let i = 0; i < apartments.length && filteredApts.length < MAX_MARKERS; i += CHUNK_SIZE) {
-          const chunk = apartments.slice(i, i + CHUNK_SIZE);
-          
-          chunk.forEach(apt => {
-            if (filteredApts.length >= MAX_MARKERS) return;
-            
-            if (apt?.latitude && 
-                apt?.longitude && 
-                apt?.aptName && 
-                Math.abs(curLat - apt.latitude) < 0.5 && 
-                Math.abs(curLng - apt.longitude) < 0.5) {
-              filteredApts.push(apt);
-            }
-          });
-        }
-
-        // 마커 생성을 청크로 나누어 처리
-        const createMarkers = () => {
-          const markers = [];
-          for (let i = 0; i < filteredApts.length; i += CHUNK_SIZE) {
-            const chunk = filteredApts.slice(i, i + CHUNK_SIZE);
-            const chunkMarkers = chunk.map(apt => {
-              const marker = new kakao.maps.Marker({
-                position: new kakao.maps.LatLng(apt.latitude, apt.longitude),
-                image: new kakao.maps.MarkerImage('/images/home.svg', new kakao.maps.Size(36, 36))
-              });
-              
-              // InfoWindow 생성
-              const infowindow = new kakao.maps.InfoWindow({
-                content: `
-                    <div style="
-                      min-width: 140px;
-                      font-size: 13px;
-                      font-weight: 600;
-                      color: #0a362f;
-                      text-align: center;
-                      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                    ">
-                      ${apt.aptName}
-                    </div>
-                  `,
-                removable: false,
-                zIndex: 1
-              });
-              
-              // 마우스 이벤트 등록
-              kakao.maps.event.addListener(marker, 'mouseover', function() {
-                // 이전 InfoWindow 닫기
-                if (hoveredInfowindow) {
-                  hoveredInfowindow.close();
-                }
-                infowindow.open(map, marker);
-                hoveredInfowindow = infowindow;
-              });
-
-              kakao.maps.event.addListener(marker, 'mouseout', function() {
-                infowindow.close();
-                hoveredInfowindow = null;
-              });
-
-              kakao.maps.event.addListener(marker, 'click', () => {
-                this.$emit('select-house', {
-                  aptName: apt.aptName,
-                  si: apt.si,
-                  gu: apt.gu
-                });
-              });
-
-              marker.aptData = { aptName: apt.aptName };
-              return marker;
+        // dong 레벨일 경우 개별 마커로 표시
+        if (selectedLevel === "dong") {
+          apartments.forEach((apt) => {
+            const marker = new kakao.maps.Marker({
+              position: new kakao.maps.LatLng(apt.latitude, apt.longitude),
+              map: map,
+              title: apt.aptName,
+              image: new kakao.maps.MarkerImage(
+                "/images/home.svg",
+                new kakao.maps.Size(36, 36)
+              ),
             });
-            markers.push(...chunkMarkers);
-          }
-          return markers;
-        };
 
-        markers = createMarkers();
+            // 인포윈도우 생성
+            const infowindow = new kakao.maps.InfoWindow({
+              content: `
+                <div style="padding: 10px; text-align: center;">
+                  <div style="font-weight: bold; margin-bottom: 4px;">${apt.aptName}</div>
+                </div>
+              `,
+            });
 
-        if (markers.length > 0) {
-          // 마커 일괄 추가 - 청크로 나누어 처리
-          const addMarkersInChunks = (index = 0) => {
-            const chunk = markers.slice(index, index + CHUNK_SIZE);
-            if (chunk.length === 0) return;
+            // 마우스 이벤트
+            kakao.maps.event.addListener(marker, "mouseover", () =>
+              infowindow.open(map, marker)
+            );
+            kakao.maps.event.addListener(marker, "mouseout", () =>
+              infowindow.close()
+            );
 
-            clusterer.addMarkers(chunk);
-
-            if (index + CHUNK_SIZE < markers.length) {
-              requestAnimationFrame(() => {
-                addMarkersInChunks(index + CHUNK_SIZE);
-              });
-            }
-          };
-          addMarkersInChunks();
+            markers.push(marker);
+          });
+          return;
         }
+
+        // si, gu 레벨일 경우 클러스터링
+
+        let regionNames =
+          selectedLevel === "si"
+            ? this.gugunList.map((gu) => gu.guName) // 구군 이름만 추출
+            : this.dongList.map((dong) => dong.dongName); // 동 이름만 추출
+
+        if (!regionNames?.length) {
+          console.log("행정구역 리스트가 비어있습니다.");
+          return;
+        }
+
+        // 하위 행정구역별로 그룹화
+        const groupedApts = {};
+        regionNames.forEach((name) => {
+          groupedApts[name] = {
+            apartments: [],
+            center: { lat: 0, lng: 0 },
+            count: 0,
+          };
+        });
+
+        // 아파트들을 해당 그룹에 할당
+        apartments.forEach((apt) => {
+          const key = selectedLevel === "si" ? apt.gu : apt.dong;
+          if (groupedApts[key]) {
+            if(apt.latitude && apt.longitude){
+              groupedApts[key].apartments.push(apt);
+              groupedApts[key].center.lat += parseFloat(apt.latitude);
+              groupedApts[key].center.lng += parseFloat(apt.longitude);
+              groupedApts[key].count++;
+            }
+          }
+        });
+
+        // 빈 그룹 제거 및 중심점 계산
+        Object.keys(groupedApts).forEach((key) => {
+          if (groupedApts[key].count === 0) {
+            delete groupedApts[key];
+          } else {
+            groupedApts[key].center.lat /= groupedApts[key].count;
+            groupedApts[key].center.lng /= groupedApts[key].count;
+          }
+        });
+
+        // 클러스터러 초기화 수정
+        clusterer = new kakao.maps.MarkerClusterer({
+          map: map,
+          averageCenter: true,
+          minLevel: selectedLevel === "si" ? 7 : 6,
+          gridSize: selectedLevel === "si" ? 120 : 100,
+          disableClickZoom: selectedLevel === "si" || selectedLevel === "gu", // si 또는 gu 레벨일 때 클릭 줌 비활성화
+          minClusterSize: 1,
+          texts: (count) => {
+            const currentMarker = markers[markers.length - 1];
+            return currentMarker ? currentMarker.getTitle() : `${count}개`;
+          },
+          calculator: [1, 10, 30], // 클러스터 크기 구분값
+          styles: [
+            {
+              width: "100px",
+              height: "40px",
+              background: "rgba(10, 54, 47, .8)",
+              borderRadius: "20px",
+              color: "#fff",
+              textAlign: "center",
+              fontWeight: "bold",
+              lineHeight: "41px",
+              fontSize: "12px",
+            },
+            {
+              width: "110px",
+              height: "45px",
+              background: "rgba(10, 54, 47, .8)",
+              borderRadius: "23px",
+              color: "#fff",
+              textAlign: "center",
+              fontWeight: "bold",
+              lineHeight: "46px",
+              fontSize: "13px",
+            },
+            {
+              width: "120px",
+              height: "50px",
+              background: "rgba(10, 54, 47, .8)",
+              borderRadius: "25px",
+              color: "#fff",
+              textAlign: "center",
+              fontWeight: "bold",
+              lineHeight: "51px",
+              fontSize: "14px",
+            },
+          ],
+        });
+
+        // 각 그룹별 마커 생성
+        Object.entries(groupedApts).forEach(([key, group]) => {
+          if (group.count > 0) {
+            const marker = new kakao.maps.Marker({
+              position: new kakao.maps.LatLng(
+                group.center.lat,
+                group.center.lng
+              ),
+              title: `${key}\n(${group.count}개)`, // 마커 타이틀에 지역명과 개수 포함
+            });
+
+            markers.push(marker);
+            clusterer.addMarker(marker);
+          }
+        });
       } catch (error) {
         console.error("마커 표시 중 오류:", error);
       }
@@ -384,12 +584,12 @@ export default {
         clusterer.clear();
       }
       if (markers.length > 0) {
-        markers.forEach(marker => marker.setMap(null));
+        markers.forEach((marker) => marker.setMap(null));
       }
-      if(circle500m) {
+      if (circle500m) {
         circle500m.setMap(null);
       }
-      if(circle1km) {
+      if (circle1km) {
         circle1km.setMap(null);
       }
       markers = [];
