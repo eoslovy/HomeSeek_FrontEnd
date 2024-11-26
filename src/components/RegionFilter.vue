@@ -43,7 +43,7 @@ export default {
           
         const mapRef = this.$parent.$refs.map;
         if (mapRef) {
-          mapRef.setMapOptions(9, sido.latitude, sido.longitude);
+          mapRef.setMapOptions(8, sido.latitude, sido.longitude);
           mapRef.showMarkers(response.data, 'si');
         }
       } catch (error) {
@@ -84,7 +84,7 @@ export default {
           
         const mapRef = this.$parent.$refs.map;
         if (mapRef) {
-          mapRef.setMapOptions(6, dong.latitude, dong.longitude);
+          mapRef.setMapOptions(4, dong.latitude, dong.longitude);
           mapRef.showMarkers(response.data, 'dong');
         }
     },

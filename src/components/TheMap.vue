@@ -419,6 +419,7 @@ export default {
     },
 
     async showMarkers(apartments, selectedLevel) {
+      this.clearMarkers();
       if (!map || !apartments?.length || !window?.kakao?.maps) {
         console.log("조건 체크 실패", {
           map,
@@ -428,8 +429,6 @@ export default {
       }
 
       try {
-        this.clearMarkers();
-
         // dong 레벨일 경우 개별 마커로 표시
         if (selectedLevel === "dong") {
           apartments.forEach((apt) => {
@@ -441,15 +440,6 @@ export default {
                 "/images/home.svg",
                 new kakao.maps.Size(36, 36)
               ),
-            });
-
-            // 마커 클릭 이벤트
-            kakao.maps.event.addListener(marker, "click", () => {
-              this.$emit("cluster-click", {
-                level: "detail",
-                key: apt.aptSeq,
-                apartments: [apt],
-              });
             });
 
             // 인포윈도우 생성
@@ -481,8 +471,6 @@ export default {
             ? this.gugunList.map((gu) => gu.guName) // 구군 이름만 추출
             : this.dongList.map((dong) => dong.dongName); // 동 이름만 추출
 
-        console.log("regionNames:", regionNames); // 디버깅용
-
         if (!regionNames?.length) {
           console.log("행정구역 리스트가 비어있습니다.");
           return;
@@ -502,14 +490,14 @@ export default {
         apartments.forEach((apt) => {
           const key = selectedLevel === "si" ? apt.gu : apt.dong;
           if (groupedApts[key]) {
-            groupedApts[key].apartments.push(apt);
-            groupedApts[key].center.lat += parseFloat(apt.latitude);
-            groupedApts[key].center.lng += parseFloat(apt.longitude);
-            groupedApts[key].count++;
+            if(apt.latitude && apt.longitude){
+              groupedApts[key].apartments.push(apt);
+              groupedApts[key].center.lat += parseFloat(apt.latitude);
+              groupedApts[key].center.lng += parseFloat(apt.longitude);
+              groupedApts[key].count++;
+            }
           }
         });
-
-        console.log("그룹화된 아파트:", groupedApts); // 디버깅용
 
         // 빈 그룹 제거 및 중심점 계산
         Object.keys(groupedApts).forEach((key) => {
@@ -527,9 +515,9 @@ export default {
           averageCenter: true,
           minLevel: selectedLevel === "si" ? 7 : 6,
           gridSize: selectedLevel === "si" ? 120 : 100,
+          disableClickZoom: selectedLevel === "si" || selectedLevel === "gu", // si 또는 gu 레벨일 때 클릭 줌 비활성화
           minClusterSize: 1,
           texts: (count) => {
-            // 클러스터에 표시할 텍스트 설정
             const currentMarker = markers[markers.length - 1];
             return currentMarker ? currentMarker.getTitle() : `${count}개`;
           },
@@ -580,16 +568,6 @@ export default {
                 group.center.lng
               ),
               title: `${key}\n(${group.count}개)`, // 마커 타이틀에 지역명과 개수 포함
-            });
-
-            // 클러스터 클릭 이벤트
-            kakao.maps.event.addListener(marker, "click", () => {
-              const level = selectedLevel === "si" ? "gu" : "dong";
-              this.$emit("cluster-click", {
-                level,
-                key,
-                apartments: group.apartments,
-              });
             });
 
             markers.push(marker);

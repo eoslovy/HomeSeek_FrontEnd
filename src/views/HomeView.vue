@@ -2,8 +2,6 @@
   <div class="home">
     <TheMap
       ref="map"
-      @cluster-click="handleClusterClick"
-      :apartments="apartments"
     />
 
     <div id="search-box" class="search-container">
