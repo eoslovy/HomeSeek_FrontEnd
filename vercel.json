@@ -1,13 +1,19 @@
 {
-    "headers": [
-      {
-        "source": "/(.*)",
-        "headers": [
-          {
-            "key": "Strict-Transport-Security",
-            "value": "max-age=0"
-          }
-        ]
-      }
-    ]
-  }
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=0"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "http://ec2-3-39-240-71.ap-northeast-2.compute.amazonaws.com:8080/:path*"
+    }
+  ]
+}
