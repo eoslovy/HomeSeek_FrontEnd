@@ -66,7 +66,7 @@ export default {
   methods: {
     async searchTrends() {
       try {
-        const response = await axios.post('http://localhost:8080/trend/search', {
+        const response = await axios.post('http://ec2-3-39-240-71.ap-northeast-2.compute.amazonaws.com:8080/trend/search', {
           districts: this.selectedDistricts
         });
         

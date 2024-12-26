@@ -185,7 +185,7 @@ export default {
           autoLogin: this.loginForm.autoLogin,
         };
 
-        const response = await fetch("http://localhost:8080/users/login", {
+        const response = await fetch("http://ec2-3-39-240-71.ap-northeast-2.compute.amazonaws.com:8080/users/login", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -290,7 +290,7 @@ export default {
 
       try {
         const response = await fetch(
-          `http://localhost:8080/users/check-id/${this.signupForm.userId}`
+          `http://ec2-3-39-240-71.ap-northeast-2.compute.amazonaws.com:8080/users/check-id/${this.signupForm.userId}`
         );
         const data = await response.json();
 
@@ -325,7 +325,7 @@ export default {
 
     async handleSignup() {
       try {
-        const response = await fetch("http://localhost:8080/users/signup", {
+        const response = await fetch("http://ec2-3-39-240-71.ap-northeast-2.compute.amazonaws.com:8080/users/signup", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -365,7 +365,7 @@ export default {
     async checkAutoLogin(userId, accessToken, refreshToken) {
       try {
         const response = await fetch(
-          "http://localhost:8080/users/checkAutoLogin",
+          "http://ec2-3-39-240-71.ap-northeast-2.compute.amazonaws.com:8080/users/checkAutoLogin",
           {
             method: "POST",
             headers: {

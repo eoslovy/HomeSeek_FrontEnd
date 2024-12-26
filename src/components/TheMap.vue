@@ -100,7 +100,7 @@ export default {
     async fetchNearbyFacilities(type) {
       try {
         const response = await axios.get(
-          `http://localhost:8080/map/getFacilities/${type}`
+          `http://ec2-3-39-240-71.ap-northeast-2.compute.amazonaws.com:8080/map/getFacilities/${type}`
         );
         return response.data;
       } catch (error) {
