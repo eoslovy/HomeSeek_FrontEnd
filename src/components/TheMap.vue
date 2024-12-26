@@ -100,7 +100,7 @@ export default {
     async fetchNearbyFacilities(type) {
       try {
         const response = await axios.get(
-          `http://ec2-3-39-240-71.ap-northeast-2.compute.amazonaws.com:8080/map/getFacilities/${type}`
+          `/api/map/getFacilities/${type}`
         );
         return response.data;
       } catch (error) {
@@ -400,7 +400,7 @@ export default {
           selectedInfowindow.open(map, selectedMarker);
         }
 
-        // 지도 중심 이동 및 레벨 설정
+        // ���도 중심 이동 및 레벨 설정
         map.setCenter(position);
         map.setLevel(4);
 

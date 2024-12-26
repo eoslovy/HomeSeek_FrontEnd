@@ -54,7 +54,7 @@ export default {
     async fetchNews() {
       try {
         this.isLoading = true;
-        const response = await axios.get('http://ec2-3-39-240-71.ap-northeast-2.compute.amazonaws.com:8080/crawl/searchNewsRegulation');
+        const response = await axios.get('/api/crawl/searchNewsRegulation');
         this.newsList = response.data;
       } catch (error) {
         console.error('뉴스 로딩 중 오류 발생:', error);
@@ -65,7 +65,7 @@ export default {
     },
     async fetchPolicyData() {
       try {
-        const response = await axios.get('http://ec2-3-39-240-71.ap-northeast-2.compute.amazonaws.com:8080/api/policies');
+        const response = await axios.get('/api/policy/data');
         this.policyData = response.data.policies;
       } catch (error) {
         console.error('정책 데이터 로딩 중 오류:', error);

@@ -2,7 +2,7 @@ import axios from "axios";
 
 // axios 인스턴스 생성
 const api = axios.create({
-  baseURL: "http://ec2-3-39-240-71.ap-northeast-2.compute.amazonaws.com:8080",
+  baseURL: "/api",
   headers: {
     "Content-Type": "application/json",
   },

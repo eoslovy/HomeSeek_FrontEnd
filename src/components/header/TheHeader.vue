@@ -91,7 +91,7 @@ export default {
       if (!this.searchKeyword.trim()) return;
       
       try {
-        const response = await axios.post('http://ec2-3-39-240-71.ap-northeast-2.compute.amazonaws.com:8080/openai/search', {
+        const response = await axios.post('/api/openai/search', {
           keyword: this.searchKeyword
         });
         this.searchResult = response.data;
@@ -107,7 +107,7 @@ export default {
       this.sentimentData = '';
       
       try {
-        const response = await axios.get('http://ec2-3-39-240-71.ap-northeast-2.compute.amazonaws.com:8080/openai/sentiment');
+        const response = await axios.get('/api/openai/sentiment');
         this.sentimentData = response.data;
       } catch (error) {
         console.error('시장 심리 지수를 불러오는 중 오류가 발생했습니다:', error);
