@@ -49,7 +49,7 @@ export default {
 
       try {
         const response = await axios.get(
-          `/api/map/getEstateByName`,
+          `/map/getEstateByName`,
           {
             params: {
               keyword: this.searchKeyword,

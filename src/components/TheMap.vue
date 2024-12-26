@@ -100,11 +100,11 @@ export default {
     async fetchNearbyFacilities(type) {
       try {
         const response = await axios.get(
-          `/api/map/getFacilities/${type}`
+          `/map/getFacilities/${type}`
         );
         return response.data;
       } catch (error) {
-        console.error(`${type} 정보 로드 실:`, error);
+        console.error(`${type} 정보 로드 실패:`, error);
         return [];
       }
     },
@@ -400,7 +400,7 @@ export default {
           selectedInfowindow.open(map, selectedMarker);
         }
 
-        // ���도 중심 이동 및 레벨 설정
+        // 도 중심 이동 및 레벨 설정
         map.setCenter(position);
         map.setLevel(4);
 

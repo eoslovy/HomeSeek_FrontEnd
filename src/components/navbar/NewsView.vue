@@ -36,7 +36,7 @@ export default {
     async fetchNews() {
       try {
         this.isLoading = true;
-        const response = await axios.get('/api/crawl/searchNews');
+        const response = await axios.get('/crawl/searchNews');
         this.newsList = response.data;
       } catch (error) {
         console.error('뉴스 로딩 중 오류 발생:', error);

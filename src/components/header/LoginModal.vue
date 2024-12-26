@@ -185,7 +185,7 @@ export default {
           autoLogin: this.loginForm.autoLogin,
         };
 
-        const response = await fetch("/api/users/login", {
+        const response = await fetch("/users/login", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -289,7 +289,9 @@ export default {
       }
 
       try {
-        const response = await fetch(`/api/users/check-id/${this.signupForm.userId}`);
+        const response = await fetch(
+          `/users/check-id/${this.signupForm.userId}`
+        );
         const data = await response.json();
 
         if (response.ok) {
@@ -323,7 +325,7 @@ export default {
 
     async handleSignup() {
       try {
-        const response = await fetch("/api/users/signup", {
+        const response = await fetch("/users/signup", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -362,7 +364,7 @@ export default {
 
     async checkAutoLogin(userId, accessToken, refreshToken) {
       try {
-        const response = await fetch("/api/users/checkAutoLogin",
+        const response = await fetch("/users/checkAutoLogin",
           {
             method: "POST",
             headers: {

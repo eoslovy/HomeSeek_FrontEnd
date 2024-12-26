@@ -66,7 +66,7 @@ export default {
   methods: {
     async searchTrends() {
       try {
-        const response = await axios.post('/api/trend/search', {
+        const response = await axios.post('/trend/search', {
           districts: this.selectedDistricts
         });
         

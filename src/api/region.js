@@ -1,7 +1,7 @@
 import axios from "axios";
 
 export const fetchDongNames = async (si, gu) => {
-  return axios.get("/api/map/getDongNames", {
+  return axios.get("/map/getDongNames", {
     params: {
       si,
       gu,
@@ -10,7 +10,7 @@ export const fetchDongNames = async (si, gu) => {
 };
 
 export const fetchGuNames = async (si) => {
-  return axios.get("/api/map/getGuNames", {
+  return axios.get("/map/getGuNames", {
     params: {
       si,
     },
@@ -18,5 +18,5 @@ export const fetchGuNames = async (si) => {
 };
 
 export const fetchSiNames = () => {
-  return axios.get('/api/map/getSiNames');
+  return axios.get('/map/getSiNames');
 };
