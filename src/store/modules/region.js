@@ -11,6 +11,7 @@ export default {
       state.sidoList = sidoList;
     },
     setGugunList(state, gugunList) {
+      console.log('스토어에 저장되는 구 목록:', gugunList);
       state.gugunList = gugunList;
     },
     setDongList(state, dongList) {

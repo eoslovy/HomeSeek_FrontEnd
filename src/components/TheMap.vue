@@ -38,7 +38,10 @@ export default {
   computed: {
     ...mapState({
       sidoList: (state) => state.region.sidoList, // 시도 리스트
-      gugunList: (state) => state.region.gugunList, // 구군 리스트
+      gugunList: state => {
+        console.log('computed에서 확인하는 구군 리스트:', state.region.gugunList);  // 디버깅 로그 추가
+        return state.region.gugunList;
+      },
       dongList: (state) => state.region.dongList, // 동 리스트
     }),
   },
@@ -584,6 +587,23 @@ export default {
         circle1km.setMap(null);
       }
       markers = [];
+    },
+
+    async handleSiClick(si) {
+      try {
+        console.log('시도 클릭:', si);  // 디버깅 로그 추가
+        const guList = await this.fetchGuNames(si);
+        console.log('받은 구 목록:', guList);  // 디버깅 로그 추가
+        
+        if (guList && Array.isArray(guList) && guList.length > 0) {
+          this.$store.commit('setSelectedSi', si);
+          this.$store.commit('setGuList', guList);
+        } else {
+          console.warn('구 목록이 비어있거나 올바른 형식이 아닙니다:', guList);
+        }
+      } catch (error) {
+        console.error('구 목록 로드 중 오류:', error);
+      }
     },
   },
 };
