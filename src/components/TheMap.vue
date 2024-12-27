@@ -456,37 +456,22 @@ export default {
             // 클릭 이벤트 수정
             kakao.maps.event.addListener(marker, "click", async () => {
               try {
-                // 먼저 getEstateByName으로 아파트 정보 검색 (상세 주소 포함)
+                // 아파트 이름으로만 검색
                 const estateResponse = await axios.get('/map/getEstateByName', {
                   params: {
-                    keyword: apt.aptName,
-                    dong: apt.dong,    // 동 정보 추가
-                    gu: apt.gu        // 구 정보 추가
+                    keyword: apt.aptName  // 아파트 이름만 전달
                   }
                 });
 
                 if (estateResponse.data && estateResponse.data.length > 0) {
-                  // 정확히 일치하는 아파트 찾기
-                  const exactMatch = estateResponse.data.find(estate => 
-                    estate.aptName === apt.aptName && 
-                    estate.dong === apt.dong && 
-                    estate.gu === apt.gu
-                  );
-
-                  if (exactMatch) {
-                    // 검색된 아파트 정보로 실거래가 조회
-                    const response = await axios.post('/deals/search', {
-                      aptName: exactMatch.aptName,
-                      dong: exactMatch.dong,
-                      gu: exactMatch.gu
-                    });
-                    // 검색 결과를 Vuex store에 저장
-                    this.$store.commit('house/setSearchResults', response.data);
-                    // HouseList 컴포넌트 표시
-                    this.$store.commit('house/setShowHouseList', true);
-                  } else {
-                    console.warn('정확히 일치하는 아파트를 찾을 수 없습니다.');
-                  }
+                  // 검색된 아파트 정보로 실거래가 조회
+                  const response = await axios.post('/deals/search', {
+                    aptName: apt.aptName
+                  });
+                  // 검색 결과를 Vuex store에 저장
+                  this.$store.commit('house/setSearchResults', response.data);
+                  // HouseList 컴포넌트 표시
+                  this.$store.commit('house/setShowHouseList', true);
                 } else {
                   console.warn('아파트 정보를 찾을 수 없습니다.');
                 }
