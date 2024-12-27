@@ -453,6 +453,10 @@ export default {
               infowindow.close()
             );
 
+            // 클릭 이벤트 추가
+            kakao.maps.event.addListener(marker, "click", () => {
+              this.$store.dispatch('house/searchEstateByName', apt.aptName);  // SearchBar와 동일한 액션 호출
+            });
             markers.push(marker);
           });
           return;
@@ -493,7 +497,7 @@ export default {
           }
         });
 
-        // 빈 그룹 제거 및 중심점 계산
+        // ��� 그룹 제거 및 중심점 계산
         Object.keys(groupedApts).forEach((key) => {
           if (groupedApts[key].count === 0) {
             delete groupedApts[key];
