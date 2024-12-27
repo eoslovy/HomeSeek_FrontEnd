@@ -462,6 +462,8 @@ export default {
                 });
                 // 검색 결과를 Vuex store에 저장
                 this.$store.commit('house/setSearchResults', response.data);
+                // HouseList 컴포넌트 표시
+                this.$store.commit('house/setShowHouseList', true);
               } catch (error) {
                 console.error('실거래가 조회 중 오류:', error);
               }
