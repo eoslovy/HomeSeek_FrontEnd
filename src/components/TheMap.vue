@@ -456,11 +456,9 @@ export default {
             // 클릭 이벤트 수정
             kakao.maps.event.addListener(marker, "click", async () => {
               try {
-                // 실거래가 조회 요청
-                const response = await axios.get('/deals/search', {
-                  params: {
-                    aptName: apt.aptName
-                  }
+                // POST 메서드로 변경
+                const response = await axios.post('/deals/search', {
+                  aptName: apt.aptName
                 });
                 // 검색 결과를 Vuex store에 저장
                 this.$store.commit('house/setSearchResults', response.data);
