@@ -453,10 +453,22 @@ export default {
               infowindow.close()
             );
 
-            // 클릭 이벤트 추가
-            kakao.maps.event.addListener(marker, "click", () => {
-              this.$store.dispatch('house/searchEstateByName', apt.aptName);  // SearchBar와 동일한 액션 호출
+            // 클릭 이벤트 수정
+            kakao.maps.event.addListener(marker, "click", async () => {
+              try {
+                // 실거래가 조회 요청
+                const response = await axios.get('/deals/search', {
+                  params: {
+                    aptName: apt.aptName
+                  }
+                });
+                // 검색 결과를 Vuex store에 저장
+                this.$store.commit('house/setSearchResults', response.data);
+              } catch (error) {
+                console.error('실거래가 조회 중 오류:', error);
+              }
             });
+
             markers.push(marker);
           });
           return;
@@ -497,7 +509,7 @@ export default {
           }
         });
 
-        // ��� 그룹 제거 및 중심점 계산
+        // 빈 그룹 제거 및 중심점 계산
         Object.keys(groupedApts).forEach((key) => {
           if (groupedApts[key].count === 0) {
             delete groupedApts[key];
